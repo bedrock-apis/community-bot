@@ -1,0 +1,26 @@
+{
+  "name": "bedrock-apis-bot",
+  "version": "1.0.0",
+  "description": "Source of Bedrock API's Application",
+  "main": "bin/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "powershell -ExecutionPolicy ByPass -File \".\\dev.ps1\"",
+    "build-run": "npx tsc & node ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bedrock-APIs/Bedrock-APIs-Bot.git"
+  },
+  "author": "ConMaster2112",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Bedrock-APIs/Bedrock-APIs-Bot/issues"
+  },
+  "homepage": "https://github.com/Bedrock-APIs/Bedrock-APIs-Bot#readme",
+  "dependencies": {
+    "@types/node": "^20.8.10",
+    "discord.js": "^14.13.0",
+    "typescript": "^5.2.2"
+  }
+}
