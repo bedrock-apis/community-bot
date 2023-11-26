@@ -1,3 +1,0 @@
-export const MinecraftIconPreview = "https://cdn.discordapp.com/attachments/1071081145149689857/1093331067710226432/mcpreview.png";
-export const MinecraftIconStable = "https://cdn.discordapp.com/attachments/1071081145149689857/1093331067425005578/mc.png";
-export const BedrockDedicatedServerFile = (version: string,OS:"win"|"linux" = "win",isPreview: boolean = false)=>`https://minecraft.azureedge.net/bin-${OS}${isPreview?"-preview":""}/bedrock-server-${version}.zip`;
