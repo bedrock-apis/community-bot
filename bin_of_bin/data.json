@@ -1,0 +1,15 @@
+{
+    "guildId": "1138527696310251681",
+    "files":{
+        "npm_data":"versions_npm.json",
+        "bds_data":"versions_bds.json"
+    },
+    "roles":{
+        "npm_announcements":"1140358911531159693",
+        "bds_announcements":"1140394520161292369"
+    },
+    "channels":{
+        "npm_announcements":"1140347030884061274",
+        "bds_announcements":"1140393482087833692"
+    }
+}
