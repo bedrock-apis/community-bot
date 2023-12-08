@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import { DownloadContent } from "../../features";
-import { defualtLib } from "./baselib";
+//import { defualtLib } from "./baselib";
 
 const libFileName = "lib.d.ts";
 const codeFileName = "index.ts";
@@ -16,7 +16,7 @@ const externalModuleTypes = [
 ]
 //const filesLike = externalModuleTypes.map(e=>`node_modules/@minecraft/${e}.d.ts`);
 const defualtLibs = {
-    [libFileName]: defualtLib 
+    [libFileName]: "defualtLib" as any
 };
 class CompilerHostLike implements ts.CompilerHost{
     constructor(fileSource: string){
