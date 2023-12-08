@@ -1,10 +1,12 @@
-import {Client as CL, GatewayIntentBits, Interaction} from "discord.js";
-import path from "path";
-import {promises as fs} from "fs";
-import { CommandModuleDefinition } from "./commands/CommandDefinition";
+import {ApplicationCommandDataResolvable, BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, SlashCommandBuilder} from "discord.js";
+import { PublicEvent, TriggerEvent } from "../features";
 
 export class Client extends CL<true>{
-    commands = new Map<string,CommandModuleDefinition>();
+    readonly _commandDefinitions = new Map<string,BaseApplicationCommandData>();
+    readonly _commandHandlers = new WeakMap<BaseApplicationCommandData,(n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void>();
+    readonly onReload = new PublicEvent<[]>;
+    readonly onButtonPress = new PublicEvent<[string,ButtonInteraction]>;
+    //readonly onCommandInteractionEvent = new PublicEvent<[]>
     constructor(){
         super({
             intents: GatewayIntentBits.GuildMembers | GatewayIntentBits.GuildMessages | GatewayIntentBits.GuildModeration | GatewayIntentBits.Guilds | GatewayIntentBits.MessageContent
@@ -12,41 +14,24 @@ export class Client extends CL<true>{
         this.on("ready",this.onReady as any);
         this.on("interactionCreate",this.onInteraction);
     }
-    onReady(){
+    protected async onReady(){
+        await Promise.all(TriggerEvent(this.onReload));
         console.log("[Client] Logged in as ", this.user.displayName);
         this.onInitialize().catch(er=>console.error(er,er.stack));
     }
-    async onInitialize(){
-        const commandsPath = path.resolve(__dirname,"./commands");
-        for (const folder of await fs.readdir(commandsPath,{withFileTypes:true})) {
-            if(folder.isDirectory()) for (const file of await fs.readdir(commandsPath +"/"+ folder.name,{withFileTypes:true})) {
-                if((!file.isFile()) || (!file.name.endsWith(".js"))) continue;
-                try {
-                    console.log("[Client][Commands][Registry]",`Loading command from: ${[folder.name,file.name].join("/")}`);
-                    const module = (await import(["./commands/",folder.name,file.name].join("/"))) as any;
-                    if(!("default" in module)) {
-                        console.warn("[Client][Commands][Registry]","Faild to load structure of",[folder.name,file.name].join("/"));
-                        continue;
-                    }
-                    const def = module.default as CommandModuleDefinition;
-                    if(typeof def.execute !== "function" || typeof (def?.definition as any)?.name !== "string"){
-                        console.warn("[Client][Commands][Registry]","Faild to load structure of",[folder.name,file.name].join("/"));
-                        continue;
-                    }
-                    const {definition:{name}} = def as any;
-                    if(this.commands.has(name)) console.warn("[Client][Commands][Registry] Duplicated command name redefinition: " + name);
-                    this.commands.set(name,def);
-                } catch (error) {
-                    console.warn("[Client][Commands][Registry]","Faild to load module ",[folder.name,file.name].join("/"), (error as any)?.message);
-                }
-            }
-        }
-        this.application.commands.set(Array.from(this.commands,([k,v])=>v.definition));
-        console.log("[Client][Commands][Registry]", this.commands.size,"commands were successfully registered");
+    protected async onInitialize(){
+        //@ts-ignore
+        this.application.commands.set([...this._commandDefinitions.values()]);
+        console.log("[Client][Commands][Registry]", this._commandDefinitions.size,"commands were successfully registered");
     }
-    async onInteraction(interaction: Interaction){
+    protected async onInteraction(interaction: Interaction){
         try {
-            if(interaction.isCommand()) this.commands.get(interaction.commandName)?.execute(interaction,this);
+            if(interaction.isCommand()) {
+                const a = this._commandDefinitions.get(interaction.commandName);
+                if(this._commandHandlers.has(a as any)) this._commandHandlers.get(a as any)?.(this,interaction.commandName, interaction);
+            }else if(interaction.isButton()){
+                await TriggerEvent(this.onButtonPress,interaction.customId,interaction);
+            }
         } catch (error: any) {
             console.log(error.message);
         }
@@ -65,4 +50,16 @@ export class Client extends CL<true>{
             return token??"";
         } while (true);
     }
+    //@ts-ignore
+    registryCommand(commandDefinition: ContextMenuCommandBuilder, handler: (n: this,commandname: string, interaction: ContextMenuCommandInteraction<CacheType>)=>void): this
+    registryCommand(commandDefinition: Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">, handler: (n: this,commandname: string, interaction: ChatInputCommandInteraction<CacheType>)=>void): this
+    registryCommand(commandDefinition: BaseApplicationCommandData, handler: (n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void)
+    {
+        const commandName = commandDefinition.name;
+        if(this._commandDefinitions.has(commandName)) throw new ReferenceError("Duplicate command name: " + commandName);
+        this._commandDefinitions.set(commandName,commandDefinition);
+        this._commandHandlers.set(commandDefinition,handler as any);
+        return this;
+    }
 }
+export const client = new Client();

@@ -19,7 +19,9 @@
   },
   "homepage": "https://github.com/Bedrock-APIs/Bedrock-APIs-Bot#readme",
   "dependencies": {
+    "@types/node": "^20.10.3",
     "discord.js": "^14.13.0",
+    "node-fetch": "^3.3.2",
     "typescript": "^5.2.2"
   }
 }
