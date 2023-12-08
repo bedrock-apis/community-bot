@@ -1,5 +1,5 @@
 node_modules/
 bin/
+bin_of_bun/
 dev.ps1
 bds-trash/
-bin_of_bin/
