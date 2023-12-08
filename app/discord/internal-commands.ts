@@ -28,4 +28,4 @@ client.registryCommand(
             embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`UUID v4`).setDescription("UUID v4 is a version of UUID that is generated based on random numbers. It produces unique identifiers from separate applications without the coordination of a centralized agent or process."+"\n```properties" + obj + "\n```")]
         });
     }
-);
+); 
