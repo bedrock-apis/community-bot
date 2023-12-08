@@ -27,8 +27,9 @@ export class Client extends CL<true>{
     protected async onInteraction(interaction: Interaction){
         try {
             if(interaction.isCommand()) {
+                console.log("Command -> " + interaction.commandName);
                 const a = this._commandDefinitions.get(interaction.commandName);
-                if(this._commandHandlers.has(a as any)) this._commandHandlers.get(a as any)?.(this,interaction.commandName, interaction);
+                if(this._commandHandlers.has(a as any)) await this._commandHandlers.get(a as any)?.(this,interaction.commandName, interaction);
             }else if(interaction.isButton()){
                 await TriggerEvent(this.onButtonPress,interaction.customId,interaction);
             }
