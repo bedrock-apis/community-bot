@@ -213,12 +213,7 @@ function getPackageVersionListInfoEmbed(packageVersion: Package){
         "color": 0x2b2d31,
         "fields": [
             ...arraysIntall.filter(n=>n)
-        ],
-        "timestamp": new Date(packageVersion.latestVersion.releaseTime).toISOString(),
-        "footer": {
-            "text": dev.name,
-            icon_url: `https://www.npmjs.com/${dev.avatarSmall}`
-        }
+        ]
     });
 }
 function getAllPackageVersions(packageVersion: Package){
@@ -234,11 +229,6 @@ function getAllPackageVersions(packageVersion: Package){
         title:"Module   •   `" + name + "`",
         url:`https://www.npmjs.com/package/${name}?activeTab=versions`,
         description:`**Description**\n${description}\n`+versionsLike.join("\n") + (versions.size>15?"\n- •••":""),
-        "color": 0x2b2d31,
-        "timestamp": new Date(packageVersion.latestVersion.releaseTime).toISOString(),
-        "footer": {
-            "text": dev.name,
-            icon_url: `https://www.npmjs.com/${dev.avatarSmall}`
-        }
+        "color": 0x2b2d31
     });
 }
