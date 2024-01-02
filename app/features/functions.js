@@ -46,5 +46,27 @@ module.exports = {
             if (total_length >= index)
                 return [i + 1,losangles];
         }
+    },
+    searchFor(searchText, possibleResults) {
+        let matchCounts = {};
+        for (let i = 0; i < possibleResults.length; i++) {
+          const currentResult = possibleResults[i];
+          let matchCount = 0;
+          for (let j = 0; j < searchText.length; j++) {
+            if (currentResult.includes(searchText[j])) {
+              matchCount++;
+            }
+          }
+          matchCounts[currentResult] = matchCount;
+        }
+        let mostMatchingResult = null;
+        let maxMatchCount = 0;
+        for (let result in matchCounts) {
+          if (matchCounts[result] > maxMatchCount) {
+            maxMatchCount = matchCounts[result];
+            mostMatchingResult = result;
+          }
+        }
+        return mostMatchingResult;
     }
 }

@@ -1,73 +1,17 @@
 import {client} from "../../discord";
-import { SlashCommandBuilder, EmbedBuilder, SlashCommandSubcommandBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, SlashCommandSubcommandBuilder, ChatInputCommandInteraction, CacheType } from "discord.js";
 import { Package, PackageVersion } from "../../features/npm";
 
-client.registryCommand(
-    new SlashCommandBuilder().addSubcommand(
-        new SlashCommandSubcommandBuilder().setName("get").setDescription("Get Package information")
-            .addStringOption(p=>p.setChoices(
-                {value:"minecraft-server",name:"@minecraft/server"},
-                {value:"minecraft-common",name:"@minecraft/common"},
-                {value:"minecraft-server-ui",name:"@minecraft/server-ui"},
-                {value:"minecraft-server-editor",name:"@minecraft/server-editor"},
-                {value:"minecraft-server-gametest",name:"@minecraft/server-gametest"},
-                {value:"minecraft-server-net",name:"@minecraft/server-net"},
-                {value:"minecraft-server-admin",name:"@minecraft/server-admin"},
-            ).setName("package-id").setRequired(true).setDescription("Package name"))
-            .addBooleanOption(n=>n.setName("latest-beta").setDescription("If true, it returns the latest beta version, if not, it returns the latest stable."))
-    ).addSubcommand(
-        new SlashCommandSubcommandBuilder().setName("info").setDescription("Gets the Package information")
-        .addStringOption(p=>p.setChoices(
-            {value:"minecraft-server",name:"@minecraft/server"},
-            {value:"minecraft-common",name:"@minecraft/common"},
-            {value:"minecraft-server-ui",name:"@minecraft/server-ui"},
-            {value:"minecraft-server-editor",name:"@minecraft/server-editor"},
-            {value:"minecraft-server-gametest",name:"@minecraft/server-gametest"},
-            {value:"minecraft-server-net",name:"@minecraft/server-net"},
-            {value:"minecraft-server-admin",name:"@minecraft/server-admin"},
-        ).setName("package-id").setRequired(true).setDescription("Package name"))
-    )
-    .setName("package").setDescription("Package APIs"),
-    async (client, commandName, interaction)=>{
-        switch (interaction.options.getSubcommand()) {
-            case "get":
-                const useBeta = interaction.options.getBoolean("latest-beta");
-                const info1 = await Package.Load(packages[interaction.options.getString("package-id") as any]);
-                if(useBeta){
-                    if(!info1.tags.has("beta")) {
-                        interaction.reply({
-                            embeds: [
-                                new EmbedBuilder().setColor(0x2b2d31).setTitle("Beta tag not found").setDescription("'beta' tag for `" + packages[interaction.options.getString("package-id") as any] + "` wasn't found. Showing latest version."),
-                                getPackageVersionInfoEmbed(info1.latestVersion as any)
-                            ]
-                        });
-                    }else{
-                        interaction.reply({
-                            embeds: [
-                                getPackageVersionInfoEmbed(info1.tags.get("beta") as any)
-                            ]
-                        });
-                    }
-                }else{
-                    await interaction.reply({
-                        embeds: [getPackageVersionInfoEmbed(info1.latestVersion as any)]
-                    });
-                }
-                break;
-            case "info":
-                const info2 = await Package.Load(packages[interaction.options.getString("package-id") as any]);
-                await interaction.reply({
-                    embeds: [getPackageInfoEmbed(info2)]
-                });
-                break;
-            default:
-                await interaction.reply({
-                    embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Unknow subcommand name: ` + interaction.options.getSubcommand())]
-                });
-                break;
-        }
-    }
-);
+const choices = [
+    {value:"minecraft-server",name:"@minecraft/server"},
+    {value:"minecraft-common",name:"@minecraft/common"},
+    {value:"minecraft-server-ui",name:"@minecraft/server-ui"},
+    {value:"minecraft-server-editor",name:"@minecraft/server-editor"},
+    {value:"minecraft-server-gametest",name:"@minecraft/server-gametest"},
+    {value:"minecraft-server-net",name:"@minecraft/server-net"},
+    {value:"minecraft-server-admin",name:"@minecraft/server-admin"},
+    {value:"minecraft-vanilla-data",name:"@minecraft/vanilla-data"},
+]
 const packages: {[k: string]: string} = {
     "minecraft-common":"@minecraft/common",
     "minecraft-server":"@minecraft/server",
@@ -75,7 +19,76 @@ const packages: {[k: string]: string} = {
     "minecraft-server-editor":"@minecraft/server-editor",
     "minecraft-server-gametest":"@minecraft/server-gametest",
     "minecraft-server-net":"@minecraft/server-net",
-    "minecraft-server-admin":"@minecraft/server-admin"
+    "minecraft-server-admin":"@minecraft/server-admin",
+    "minecraft-vanilla-data":"@minecraft/vanilla-data"
+}
+client.registryCommand(
+    new SlashCommandBuilder().addSubcommand(
+        new SlashCommandSubcommandBuilder().setName("get").setDescription("Gets package information")
+            .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
+            .addBooleanOption(n=>n.setName("latest-beta").setDescription("If true, it returns the latest beta version, if not, it returns the latest stable."))
+    ).addSubcommand(
+        new SlashCommandSubcommandBuilder().setName("info").setDescription("Gets the package information")
+        .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
+    ).addSubcommand(
+        new SlashCommandSubcommandBuilder().setName("list").setDescription("Gets the list of package versions")
+        .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
+    ).addSubcommand(
+        new SlashCommandSubcommandBuilder().setName("versions").setDescription("Gets the list of package versions")
+        .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
+    )
+    .setName("package").setDescription("Package APIs"),
+    async (client, commandName, interaction)=>{
+        const subcommand = interaction.options.getSubcommand();
+        if(subcommand in commandOptions) await commandOptions[subcommand as any](interaction)
+        else await interaction.reply({
+            embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Unknow subcommand name: ` + interaction.options.getSubcommand())]
+        });
+    }
+);
+const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<CacheType>)=>void} = {
+    async "get"(interaction){
+        const useBeta = interaction.options.getBoolean("latest-beta");
+        const info1 = await Package.Load(packages[interaction.options.getString("package-id") as any]);
+        if(useBeta){
+            if(!info1.tags.has("beta")) {
+                interaction.reply({
+                    embeds: [
+                        new EmbedBuilder().setColor(0x2b2d31).setTitle("Beta tag not found").setDescription("'beta' tag for `" + packages[interaction.options.getString("package-id") as any] + "` wasn't found. Showing latest version."),
+                        getPackageVersionInfoEmbed(info1.latestVersion as any)
+                    ]
+                });
+            }else{
+                interaction.reply({
+                    embeds: [
+                        getPackageVersionInfoEmbed(info1.tags.get("beta") as any)
+                    ]
+                });
+            }
+        }else{
+            await interaction.reply({
+                embeds: [getPackageVersionInfoEmbed(info1.latestVersion as any)]
+            });
+        }
+    },
+    async "info"(interaction){
+        const pack = await Package.Load(packages[interaction.options.getString("package-id") as any]);
+        await interaction.reply({
+            embeds: [getPackageInfoEmbed(pack)]
+        });
+    },
+    async "list"(interaction){
+        const pack = await Package.Load(packages[interaction.options.getString("package-id") as any]);
+        await interaction.reply({
+            embeds: [getPackageVersionListInfoEmbed(pack)]
+        });
+    },
+    async "versions"(interaction){
+        const pack = await Package.Load(packages[interaction.options.getString("package-id") as any]);
+        await interaction.reply({
+            embeds: [getAllPackageVersions(pack)]
+        });
+    }
 }
 
 function getPackageInfoEmbed(pack: Package){
@@ -151,4 +164,81 @@ function getPackageVersionInfoEmbed(packageVersion: PackageVersion){
             icon_url: `https://www.npmjs.com/${avatarSmall}`
         }*/
     }).setAuthor({name:"Module  " + name,url:`https://www.npmjs.com/package/${name}/v/${version}`});
+}
+function getPackageVersionListInfoEmbed(packageVersion: Package){
+    const {name,LICENSE,description,developers:[d1,d2,d3], tags, versions} = packageVersion;
+    const dev = d2??d3??d1;
+    const arraysIntall = [undefined,undefined,undefined,undefined] as any[];
+    for (const [tag, pVersion] of tags) {
+        let text = null;
+        let index = -1;
+        switch(tag){
+            case "rc": 
+            case "preview":
+            text = "Preview";
+            index = 2;
+            break;
+            case "latest": 
+            text = "Stable";
+            index = 0;
+            break;
+            case "beta": 
+            text = "Preview  •  Experimental";
+            index = 3;
+            default: break;
+        }
+        if(text) {
+            const {version, zipFile} = pVersion;
+            arraysIntall[index] = {
+                name:text,
+                value:`\`\`\`properties\nnpm i ${name}@${version}\n\`\`\``,
+                inline: false
+            };
+        }
+    }
+    for (const [k, version] of versions){
+        if(k.endsWith("-stable")){
+            arraysIntall[1] = {
+                name:"Stable  •  Experimental",
+                value:`\`\`\`properties\nnpm i ${name}@${version.version}\n\`\`\``,
+                inline: false
+            };
+            break;
+        }
+    }
+    return new EmbedBuilder({
+        title:"Module   •   `" + name + "`",
+        url:`https://www.npmjs.com/package/${name}?activeTab=versions`,
+        description:`**Description**\n${description}`,
+        "color": 0x2b2d31,
+        "fields": [
+            ...arraysIntall.filter(n=>n)
+        ],
+        "timestamp": new Date(packageVersion.latestVersion.releaseTime).toISOString(),
+        "footer": {
+            "text": dev.name,
+            icon_url: `https://www.npmjs.com/${dev.avatarSmall}`
+        }
+    });
+}
+function getAllPackageVersions(packageVersion: Package){
+    const {name,description,developers:[d1,d2,d3], versions} = packageVersion;
+    const dev = d2??d3??d1;
+    const versionsLike = [];
+    let i = 15;
+    for (const [k, {zipFile,unpackedSize:pS,releaseTime,fileCount}] of versions){
+        if(!i--) break;
+        versionsLike.push(`- [**${k}**](${zipFile})  \`Files ${fileCount}\` \`Size ${(pS%1000)?(pS/1000).toFixed(1):(pS/1000)}kb\` <t:${Math.floor(releaseTime/1000)}:R>`);
+    }
+    return new EmbedBuilder({
+        title:"Module   •   `" + name + "`",
+        url:`https://www.npmjs.com/package/${name}?activeTab=versions`,
+        description:`**Description**\n${description}\n`+versionsLike.join("\n") + (versions.size>15?"\n- •••":""),
+        "color": 0x2b2d31,
+        "timestamp": new Date(packageVersion.latestVersion.releaseTime).toISOString(),
+        "footer": {
+            "text": dev.name,
+            icon_url: `https://www.npmjs.com/${dev.avatarSmall}`
+        }
+    });
 }

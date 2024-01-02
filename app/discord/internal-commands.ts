@@ -28,4 +28,13 @@ client.registryCommand(
             embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`UUID v4`).setDescription("UUID v4 is a version of UUID that is generated based on random numbers. It produces unique identifiers from separate applications without the coordination of a centralized agent or process."+"\n```properties" + obj + "\n```")]
         });
     }
+);
+
+client.registryCommand(
+    new SlashCommandBuilder().setName("lmao").setDescription("Lol, its so funny"),
+    async (client, commandName, interaction)=>{
+        await interaction.reply({
+            embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`What is so funny?`).setDescription("Everything is fine for me, if not, let our moderators know.")]
+        });
+    }
 ); 
