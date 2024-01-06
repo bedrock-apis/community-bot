@@ -89,5 +89,16 @@ module.exports = {
         } else {
             return [root, ...paths];
         }
+    },
+    hasCodeBlock(str, lang = "") {
+        const start = str.indexOf(`\`\`\`${lang}`);
+        const end = str.indexOf('```', start + lang.length + 3);
+        return start !== -1 && end !== -1;
+    },
+    extractCodeBlock(str, lang = "") {
+        const start = str.indexOf(`\`\`\`${lang}`);
+        const end = str.indexOf('```', start + lang.length + 3);
+        if (start === -1 || end === -1) {return null;}
+        return str.slice(start + lang.length + 3, end).trim();
     }
 }
