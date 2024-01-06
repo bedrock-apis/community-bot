@@ -1,7 +1,8 @@
 import * as ts from "typescript";
-import { DownloadContent } from "../../features";
+import { DownloadContent, GITHUB_NOT_FOUND_MESSAGE, SafeDownloadContent, getPaths } from "../../features";
+import { CONTENT_LOADERS } from "../project-loader";
 //import { defualtLib } from "./baselib";
-
+let ready = false;
 const libFileName = "lib.d.ts";
 const codeFileName = "index.ts";
 const externalModuleTypes = [
@@ -12,7 +13,6 @@ const externalModuleTypes = [
     "server-admin",
     "server-gametest",
     "server-editor-bindings"
-
 ]
 //const filesLike = externalModuleTypes.map(e=>`node_modules/@minecraft/${e}.d.ts`);
 const defualtLibs = {
@@ -38,6 +38,12 @@ class CompilerHostLike implements ts.CompilerHost{
     getDefaultLibFileName(){return libFileName;}
     getSourceFile;
 
+}
+CONTENT_LOADERS["script_compiler"] = async function load(v,paths){
+    const libPath = await SafeDownloadContent(getPaths(paths.join("/"),v["compiler-lib"]).join("/"));
+    if(libPath.error || libPath.data?.toString() === GITHUB_NOT_FOUND_MESSAGE) return;
+    defualtLibs[libFileName] = libPath.data?.toString("utf-8");
+    ready = true;
 }
 export async function load(){
     const versions = JSON.parse((await DownloadContent("https://api.github.com/repos/Bedrock-APIs/bds-docs/git/trees/c57991078371ec16f460fc706b86547e4be0b6e2")).toString());
@@ -81,3 +87,4 @@ export function compile(code: string){
     const diagnostics = ts.getPreEmitDiagnostics(program);
     return diagnostics;
 }
+export function isRead(){ return ready; }
