@@ -16,11 +16,10 @@ const versions = [
     "preview"
 ];
 const dynamicVariables = new DynamicVariables();
-export const VARIABLES = Object.setPrototypeOf({}, dynamicVariables) as DynamicVariables;
+let VARIABLES = Object.setPrototypeOf({}, dynamicVariables) as DynamicVariables;
 dynamicVariables.defineVariable$("new.uuid", ()=>uuidv4());
-
-
 export async function LoadAll(){
+    VARIABLES = Object.setPrototypeOf({}, dynamicVariables) as DynamicVariables;
     await Promise.all([
         buildModuleDynamicVariables().catch(er=>console.error(er)),
         bdsDynamicVariables().catch(er=>console.error(er))
@@ -82,3 +81,4 @@ async function buildModuleDynamicVariables(){
     } 
     await Promise.all(tasks);
 }
+export function GET_VARIABLES(){return VARIABLES;}
