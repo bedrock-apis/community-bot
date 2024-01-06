@@ -23,7 +23,7 @@ async function onInteraction(client: Client, commandName: string, interaction: C
             });
         }
         else{
-            const c = new Context(interaction);
+            const c = Context.FromInteraction(interaction);
             const text = resolveVariables(data.data?.toString() as string, c);
             const name = template.name?resolveVariables(template.name,c):templateId;
             const description = template.description?resolveVariables(template.description,c):"";

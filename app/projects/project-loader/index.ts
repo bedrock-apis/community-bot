@@ -3,8 +3,9 @@ import "./main_variables";
 import { loadJob } from "./content-loader";
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { EmbedBuilder } from "@discordjs/builders";
-import { VARIABLES } from "./main_variables";
+import { GET_VARIABLES } from "./main_variables";
 import { Context, resolveVariables } from "./variables-manager";
+import { GET_IMAGES } from "./resources-manager";
 client.onReload.subscribe(async ()=>{
     await loadJob();
 })
@@ -22,7 +23,7 @@ client.registryCommand(
         const subcommand = interaction.options.getSubcommand();
         if(subcommand === "list") {
             const variables = [];
-            for (const key in VARIABLES) variables.push(key);
+            for (const key in RESOURCES.VARIABLES) variables.push(key);
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`List of variables`).setDescription("```properties\n" + variables.join("\n") + "\n```")]
             });
@@ -30,7 +31,7 @@ client.registryCommand(
         else if(subcommand === "resolve") {
             const data = interaction.options.getString("data");
             await interaction.reply({
-                embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Resolved Output`).setDescription("```\n" + resolveVariables(data??"", new Context(interaction)) + "\n```")]
+                embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Resolved Output`).setDescription("```\n" + resolveVariables(data??"", Context.FromInteraction(interaction)) + "\n```")]
             });
         }
         else await interaction.reply({
@@ -38,6 +39,11 @@ client.registryCommand(
         });
     }
 )
+export const RESOURCES = {
+    get VARIABLES(){return GET_VARIABLES();},
+    get IMAGES(){return GET_IMAGES();}
+}
 export * from "./content-loader";
 export * from "./main_variables";
 export * from "./variables-manager";
+export * from "./resources-manager";

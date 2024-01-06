@@ -21,7 +21,7 @@ export async function loadJob(){
         try {
             const text = data?.toString()??"";
             const sources = JSON.parse(text);
-            const newTask = ContentLoader(sources, paths.shift()??[]);
+            const newTask = ContentLoader(sources, paths.shift()??[]).catch(e=>console.log("Failed to run loader for: " + sources.type));
             tasks.push(newTask.then(()=>i++).catch(e=>console.error(e.message)));
         } catch (error) { continue; }
     }

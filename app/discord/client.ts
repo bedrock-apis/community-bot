@@ -9,15 +9,14 @@ export class Client extends CL<true>{
     //readonly onCommandInteractionEvent = new PublicEvent<[]>
     constructor(){
         super({
-            intents: GatewayIntentBits.GuildMembers | GatewayIntentBits.GuildMessages | GatewayIntentBits.GuildModeration | GatewayIntentBits.Guilds | GatewayIntentBits.MessageContent
+            intents: GatewayIntentBits.GuildMessages | GatewayIntentBits.Guilds | GatewayIntentBits.MessageContent
         });
         this.on("ready",this.onReady as any);
         this.on("interactionCreate",this.onInteraction);
     }
     protected async onReady(){
-        console.log("[Client] Logged in as ", this.user.displayName);
+        console.log("[Client] Logged in as", this.user.displayName);
         await Promise.all(TriggerEvent(this.onReload));
-        console.warn("Triggered");
         this.LoadCommands();
     }
     async LoadCommands(){
@@ -48,6 +47,7 @@ export class Client extends CL<true>{
                     await new Promise(res=>setTimeout(res,1*60*1000));
                     continue;
                 }
+                console.warn("Unexpected login error: " + error);
             }
             return token??"";
         } while (true);

@@ -1,6 +1,6 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, Message } from "discord.js";
 import { CONTENT_LOADERS } from "./content-loader"; 
-import { VARIABLES } from "./main_variables";
+import { GET_VARIABLES } from "./main_variables";
 export class DynamicVariables{
     constructor(){
         Context.prototype.propertiesNames.forEach(p=>{
@@ -34,14 +34,17 @@ export class Context{
     readonly ["user-display-name"];
     readonly ["user-id"];
     readonly ["guild-id"];
+    /*
     readonly ["command-name"];
-    readonly ["command-id"];
-    constructor(interaction: ChatInputCommandInteraction){
+    readonly ["command-id"];*/
+    constructor(interaction: {
+        user:{ id:string, username: string, displayName: string}, 
+        client:{user:{username:string,displayName:string}},
+        guildId: string
+    }){
         const {
             user:{id:userId, username: userName, displayName: userDisplayName}, 
             client:{user:{username:name,displayName:displaynName}},
-            commandName,
-            commandId,
             guildId
         } = interaction;
         const time = new Date();
@@ -56,10 +59,25 @@ export class Context{
         this["user-display-name"] = userDisplayName;
         this["user-id"] = userId;
         this["guild-id"] = guildId;
+        /*
         this["command-name"] = commandName;
-        this["command-id"] = commandId;
+        this["command-id"] = commandId;*/
     }
     get propertiesNames(){ return props; }
+    static FromInteraction(interaction: ChatInputCommandInteraction<CacheType>){
+        return new Context({
+            user:interaction.user,
+            client:interaction.client,
+            guildId: interaction.guildId??""
+        })
+    }
+    static FromMessage(interaction: Message){
+        return new Context({
+            user:interaction.author,
+            client:interaction.client,
+            guildId: interaction.guildId??""
+        })
+    }
 }
 const props = [
     "milliseconds",
@@ -73,12 +91,13 @@ const props = [
     "user-display-name",
     "user-id",
     "guild-id",
+    /*
     "command-name",
-    "command-id"
+    "command-id"*/
 ];
 
 CONTENT_LOADERS["static-veriables"] = async function Loader(content: any) {
-    saveVariables(VARIABLES, null, content.variables)
+    saveVariables(GET_VARIABLES(), null, content.variables)
 }
 function saveVariables(resources: any, path: string | null, variables: any){
     if(path) path += ".";
@@ -96,10 +115,10 @@ export function resolveVariables(text: string, context: Context){
     return text.replaceAll(/(\{\{[a-z0-9\.\-]+\}\})|(\"\[\[[a-z0-9\.\-]+\]\]\")/g,(e)=>{
         if(e.startsWith("{")){
             const key = e.substring(2, e.length - 2);
-            return VARIABLES.getVariable$(key, context);
+            return GET_VARIABLES().getVariable$(key, context);
         }else if (e.startsWith('"')) {
             const key = e.substring(3, e.length - 3);
-            return VARIABLES.getVariable$(key, context);
+            return GET_VARIABLES().getVariable$(key, context);
         }
         else return e;
     })
