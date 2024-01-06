@@ -1,4 +1,4 @@
-import {ApplicationCommandDataResolvable, BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, SlashCommandBuilder} from "discord.js";
+import { BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, SlashCommandBuilder} from "discord.js";
 import { PublicEvent, TriggerEvent } from "../features";
 
 export class Client extends CL<true>{
@@ -15,11 +15,12 @@ export class Client extends CL<true>{
         this.on("interactionCreate",this.onInteraction);
     }
     protected async onReady(){
-        await Promise.all(TriggerEvent(this.onReload));
         console.log("[Client] Logged in as ", this.user.displayName);
-        this.onInitialize().catch(er=>console.error(er,er.stack));
+        await Promise.all(TriggerEvent(this.onReload));
+        console.warn("Triggered");
+        this.LoadCommands();
     }
-    protected async onInitialize(){
+    async LoadCommands(){
         //@ts-ignore
         this.application.commands.set([...this._commandDefinitions.values()]);
         console.log("[Client][Commands][Registry]", this._commandDefinitions.size,"commands were successfully registered");
@@ -57,7 +58,6 @@ export class Client extends CL<true>{
     registryCommand(commandDefinition: BaseApplicationCommandData, handler: (n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void)
     {
         const commandName = commandDefinition.name;
-        if(this._commandDefinitions.has(commandName)) throw new ReferenceError("Duplicate command name: " + commandName);
         this._commandDefinitions.set(commandName,commandDefinition);
         this._commandHandlers.set(commandDefinition,handler as any);
         return this;

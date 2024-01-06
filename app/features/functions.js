@@ -1,5 +1,6 @@
 //@ts-nocheck
 const {Buffer} = require("node:buffer");
+const {GITHUB_NOT_FOUND_MESSAGE} = require("./constants");
 
 module.exports = {
     uuidv4() {
@@ -9,7 +10,6 @@ module.exports = {
             return v.toString(16);
         });
     },
-    
     async DownloadContent(url, header={}) {
         const {default: fetch,Headers} = await import("node-fetch");
         return Buffer.from(await (await fetch(url,{headers:new Headers(header),redirect:"follow",follow:5})).arrayBuffer());
@@ -20,6 +20,18 @@ module.exports = {
             return {data:Buffer.from(await (await fetch(url,{headers:new Headers(header),redirect:"follow",follow:5})).arrayBuffer())};
         } catch (error) {
             return {error:error};
+        }
+    },
+    async GetGithubContent(url, header={}){
+        try {
+            const {default: fetch,Headers} = await import("node-fetch");
+            const data = Buffer.from(await (await fetch(url,{headers:new Headers(header),redirect:"follow",follow:5})).arrayBuffer());
+            if(data.byteLength === Buffer.from(GITHUB_NOT_FOUND_MESSAGE).byteLength){
+                return data.toString() === GITHUB_NOT_FOUND_MESSAGE?null:data;
+            }
+            return data;
+        } catch (error) {
+            return null;
         }
     },
     margeColors(color1, color2, alpha) {
@@ -68,5 +80,14 @@ module.exports = {
           }
         }
         return mostMatchingResult;
+    },
+    getPaths(root, pathLike){
+        const paths = pathLike.split("/");
+        if(paths[0] === "."){ 
+            paths[0] = root;
+            return paths;
+        } else {
+            return [root, ...paths];
+        }
     }
 }
