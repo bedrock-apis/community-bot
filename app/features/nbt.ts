@@ -157,7 +157,7 @@ export class CompoudValue extends NBTValue<{[K: string]: NBTValue}>{
             let add = false;
             for (const [key,value] of this) {
                 if(add) a+=",";
-                a+="\n" + space.repeat(count) + key + ": " + value.toSNBT(space,count+1);
+                a+="\n" + space.repeat(count) + (key.length>0?key:`""`) + ": " + value.toSNBT(space,count+1);
                 add = true;
             }
             return a + "\n" + space.repeat(count - 1) + "}";
@@ -280,6 +280,9 @@ export class NBTFile{
         return Raw_NBT_Readers[type as 1](stream);
     }
     /**@returns {Buffer} @param {NBTFile} file @param {Buffer |undefined} buffer */
+    static TagFromSNBT(string: string){
+        return SNBT.read(string);
+    }
     static Write(file: NBTFile, buffer: Buffer){
         const byteSize = file.byteLength; 
         buffer = buffer??Buffer.alloc(byteSize);
@@ -299,7 +302,22 @@ export class NBTFile{
     /**@returns {number} @param {Buffer} buffer*/
     static GetHeaderVersion(buffer: Buffer){return NBTFile.HasHeader(buffer)?buffer.readInt32LE(4):0;}
 }
-
+class Source extends String{
+    offset;
+    constructor(data: string, offset=0){
+        super(data);
+        this.offset = offset;
+    }
+    read(count = 1){
+        if(count <= 1) return this[this.offset++];
+        else return this.substring(this.offset, this.offset+=count);
+    }
+    peek(count = 1){
+        if(count <= 1) return this[this.offset];
+        else return this.substring(this.offset, this.offset + count);
+    }
+    [Symbol.iterator](){return {next:()=>({done: this.offset >= this.length, value: this[this.offset++]})} as IterableIterator<string>; }
+}
 const Raw_NBT_Readers = {
     [NBTTag.Compoud](myStream: Stream){
         const compoud = {} as any;
@@ -414,4 +432,185 @@ const NBT_Writers = {
     [NBTTag.Int64](myStream: Stream, value: Int64Value){myStream.writeInt64LE(value.value)},
     [NBTTag.Float](myStream: Stream, value: FloatValue){myStream.writeFloatLE(value.value)},
     [NBTTag.Double](myStream: Stream, value: DoubleValue){myStream.writeDoubleLE(value.value)}
+}
+const NUMBER_PARSERS = {
+    "b":Number,
+    "s":Number,
+    "i":Number,
+    "l":BigInt,
+    "f":Number,
+    "d":Number,
+}
+const NUMBER_NBT_CONTRUCTORS = {
+    "b":ByteValue,
+    "s":Int16Value,
+    "i":Int32Value,
+    "l":Int64Value,
+    "f":FloatValue,
+    "d":DoubleValue,
+}
+namespace SNBT{
+    const kinds = {
+        "string": readString,
+        "compoud": readCompoud,
+        "array": readArray,
+        "number": readNumber
+    }
+    const numberChars = "0123456789";
+    const noWhiteSpace = /[A-Za-z\-\_\d]+/g;
+    const numberKinds = "bsilfd";
+    const whiteSpace = " \n\r\0\t";
+    const specialCharacters = {
+        "n":"\n",
+        "r":"\r",
+        "0":"\0",
+        "t":"\t",
+    };
+    function readSNBTType(source: Source){
+        readWhiteSpace(source);
+        const mainChar = source.peek();
+        if(mainChar === '"') return "string";
+        else if(mainChar === "{") return "compoud";
+        else if(mainChar === "[") return "array";
+        else if("0123456789-".includes(mainChar)) return "number";
+        else return mainChar;
+    }
+    function readString(source: Source){
+        let string = [];
+        let prefixed = false;
+        if(source.read() !== '"') throw new TypeError("Is not a string kind");
+        for (const char of source) {
+            if(char === "\\") {
+                if(prefixed) string.push("\\");
+                prefixed = !prefixed;
+                continue;
+            }
+            if(prefixed) {
+                if(char in specialCharacters) string.push(specialCharacters[char as "n"]);
+                else throw new TypeError("Unknown special character");
+                prefixed = false;
+                continue;
+            }
+            if(char === '"') return new StringValue(string.join(""));
+            string.push(char);
+        }
+        throw new ReferenceError("Unexpected end of input");
+    }
+    function readSourceName(source: Source){
+        let string = "";
+        while(/[A-Za-z\-\_\d]+/g.test(source.peek())) string += source.read();
+        return string;
+    }
+    function readNumber(source: Source){
+        let number = "";
+        let isFloat = false;
+        let isNegative = false;
+        let firstIteration = false;
+        let isEnd = false;
+        let kind = "i";
+        let hasExponen = false;
+        for (let char of source) {
+            if(!firstIteration && char === "-") {
+                isNegative = true;
+                number+=char;
+                firstIteration = true;
+                if(readWhiteSpace(source)) char = source.peek();
+                continue;
+            }
+            if(char === "." && !isFloat && !isEnd) {
+                isFloat = true;
+                number+=char;
+                continue;
+            }
+            if(numberChars.includes(char) && !isEnd) number += char;
+            else if(char.toLowerCase() === "e" && !isEnd && !hasExponen){
+                hasExponen=true;
+                char = source.read();
+                if(char!="+") throw new TypeError("InvalidExponent");
+                number += "e+";
+                isFloat = true;
+                if(!numberChars.includes(source.peek())) throw new TypeError("InvalidExponent");
+            }
+            else if(numberKinds.includes(char.toLowerCase()) && !isEnd) {
+                kind = char.toLowerCase();
+                isEnd = true;
+            }
+            else {
+                source.offset--;
+                break;
+            };
+            firstIteration = true;
+        }
+        return new NUMBER_NBT_CONTRUCTORS[kind as "b"](NUMBER_PARSERS[kind as "b"](number));
+    }
+    function readCompoud(source: Source){
+        let obj = new CompoudValue({});
+        let firsObj = true;
+        if(source.read() !== '{') throw new TypeError("Is not a compoud kind");
+        readWhiteSpace(source);
+        for (let char of source) {
+            if(char === '}') return obj;
+            else if(!firsObj && char !== ",") {
+                throw new SyntaxError("Unexpected: " + char);
+            }
+            if(!firsObj && char === ",") {
+                readWhiteSpace(source); 
+                char = source.read();
+            }
+            source.offset--;
+            let key = "";
+            if(char === '"') key = readString(source) + "";
+            else key = readSourceName(source);
+            char = source.read();
+            if(readWhiteSpace(source)) char = source.read();
+            if(char !== ":") throw new TypeError("Unexpected: " + char);
+            if(readWhiteSpace(source)) char = source.peek();
+            const kind = readSNBTType(source);
+            if(!(kind in kinds)) throw new TypeError("Unexpected kind: " + kind);
+            const value = kinds[kind as "string"](source);
+            obj.set(key + "", value);
+            readWhiteSpace(source)
+            firsObj = false;
+        }
+        throw new ReferenceError("Unexpected end of input");
+    }
+    function readArray(source: Source){
+        let obj = [];
+        let firsObj = true;
+        let initialKind = null;
+        if(source.read() !== '[') throw new TypeError("Is not a Array kind");
+        readWhiteSpace(source);
+        for (let char of source) {
+            if(char === ']') return new TypedArrayValue(obj, initialKind??NBTTag.Byte);
+            else if(!firsObj && char !== ",") {
+                throw new SyntaxError("Unexpected: " + char);
+            }
+            if(!firsObj && char === ",") {
+                readWhiteSpace(source); 
+                char = source.read();
+            }
+            source.offset--;
+            const kind = readSNBTType(source);
+            if(!(kind in kinds)) throw new TypeError("Unexpected kind: " + kind);
+            const value = kinds[kind as "string"](source);
+            if(!initialKind) initialKind = value.type;
+            else if(initialKind !== value.type) throw new TypeError("Array could have just one kind of elements, but multiple, expected: " + NBTTag[initialKind] + " but got: "+ NBTTag[value.type]);
+            obj.push(value);
+            readWhiteSpace(source)
+            firsObj = false;
+        }
+        throw new ReferenceError("Unexpected end of input");
+    }
+    function readWhiteSpace(source: Source){
+        let i = 0;
+        while(whiteSpace.includes(source.peek())) source.offset++, i++;
+        return i;
+    }
+    export function read(string: string){
+        const source = new Source(string);
+        readWhiteSpace(source);
+        const kind = readSNBTType(source);
+        if(!(kind in kinds)) throw new SyntaxError("Unexpected: " + source.read());
+        return kinds[kind as "string"](source) as NBTValue;
+    }
 }

@@ -7,4 +7,4 @@ export async function GetGithubContent(url: string): Promise<Buffer | null>;
 export function margeColors(color1: number, color2: number, alpha: number): number;
 export function getLine(text: string, length: number): [number, number];
 export function searchFor(text: string, possibleResults: string[]);
-export function getPaths(root: string, pathLike: string): string[]
+export function getPaths(root: string, pathLike: string): string[];

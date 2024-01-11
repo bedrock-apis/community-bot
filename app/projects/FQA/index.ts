@@ -54,6 +54,7 @@ function buildEmbed(fqa: FQAEntry, context: Context){
     if(fqa.title) embed.setTitle(resolveVariables(fqa.title,context));
     if(fqa.body) embed.setDescription(resolveVariables(fqa.body,context));
     if(fqa.link) embed.setURL(fqa.link);
+    console.warn(fqa.link);
     if(fqa.image) {
         let link = fqa.image.startsWith("ref=")?fqa.image.substring(4):RESOURCES.IMAGES[fqa.image];
         if(link) embed.setImage(link)
