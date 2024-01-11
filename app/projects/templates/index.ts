@@ -6,7 +6,7 @@ import {
     CacheType,
     BaseMessageOptions,
 } from "discord.js";
-import { CONTENT_LOADERS, PRE_CLEAN } from "../project-loader/content-loader";
+import { AFTER_LOAD, CONTENT_LOADERS, PRE_LOAD } from "../project-loader/content-loader";
 import { getPaths, GITHUB_NOT_FOUND_MESSAGE, SafeDownloadContent } from "../../features";
 import { Context, resolveVariables } from "../project-loader/variables-manager";
 import { GET_IMAGE } from "../project-loader";
@@ -31,9 +31,12 @@ async function onInteraction(client: Client, commandName: string, interaction: C
         embeds: [new EmbedBuilder().setColor(0x5b2d31).setTitle(`Can't resolve this template-id`)]
     });
 }
-PRE_CLEAN.subscribe(()=>TEMPLATES = {});
+PRE_LOAD.subscribe(()=>TEMPLATES = {});
+AFTER_LOAD.subscribe(()=>{
+    registryCommand();
+    client.LoadCommands();
+});
 CONTENT_LOADERS["templates"] = async function SetContent(v,paths){
-    TEMPLATES = {};
     const temp = v.templates;
     for (const key in temp) if(Object.prototype.hasOwnProperty.call(temp, key)){
         const value = temp[key];
@@ -43,8 +46,6 @@ CONTENT_LOADERS["templates"] = async function SetContent(v,paths){
         TEMPLATES[key] = template;
         console.log("[Template Loader] Loaded: " + key);
     }
-    registryCommand();
-    client.LoadCommands();
 }
 const registryCommand = ()=>
     client.registryCommand(
@@ -78,12 +79,14 @@ class Template{
         this.link = link;
     }
     async messagePayload(context: Context): Promise<BaseMessageOptions>{
+        console.warn("Path: ",this.path);
         const embed = new EmbedBuilder().setColor(0x2b2d31);
         embed.setTitle(this.name?resolveVariables(this.name,context):this.id);
         const description = this.description?resolveVariables(this.description,context):"";
         embed.setDescription(description);
         switch (this.kind) {
             case TemplateKind.content:
+                console.warn("Path: ",this.path);
                 const data = await SafeDownloadContent(this.path??"");
                 if(data.error || data.data?.toString?.() === GITHUB_NOT_FOUND_MESSAGE){
                     return { embeds:[new EmbedBuilder().setColor(0x4b2d31).setTitle(`Download of ${this.id} fails!`)]};
