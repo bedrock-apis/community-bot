@@ -1,9 +1,9 @@
-import { CONTENT_LOADERS, PRE_CLEAN } from "../project-loader/content-loader";
+import { CONTENT_LOADERS, PRE_LOAD } from "../project-loader/content-loader";
 import { GetGithubContent, getPaths } from "../../features";
 
 let FQA_ENTRIES: {[K:string]: FQAEntry} = {};
 export const GET_FQA_ENTIRES = ()=>FQA_ENTRIES;
-PRE_CLEAN.subscribe(()=>FQA_ENTRIES = {});
+PRE_LOAD.subscribe(()=>FQA_ENTRIES = {});
 CONTENT_LOADERS["fqa"] = async function SetContent(v,paths){
     const basePath = paths.join("/");
     let tasks = [];

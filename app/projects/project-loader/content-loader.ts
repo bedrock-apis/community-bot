@@ -3,7 +3,7 @@ import { LoadAll } from "./main_variables";
 
 export async function loadJob(){
     const taskBariableLoad = LoadAll();
-    const preTask = TriggerEvent(PRE_CLEAN);
+    const preTask = TriggerEvent(PRE_LOAD);
     const baseContents = await SafeDownloadContent(BOT_RESOURCES_REPO_ROOT_RAW + "/contents.json");
     if(baseContents.error || baseContents.data?.toString?.() === GITHUB_NOT_FOUND_MESSAGE) throw baseContents.error??GITHUB_NOT_FOUND_MESSAGE;
     const contents = JSON.parse(baseContents.data?.toString("utf-8")??"") as string[];
@@ -29,6 +29,7 @@ export async function loadJob(){
     }
     await Promise.all(tasks);
     await taskBariableLoad;
+    await Promise.all(TriggerEvent(AFTER_LOAD));
     return i;
 }
 async function ContentLoader(content: {[K: string]: any}, path: string[]){
@@ -40,4 +41,5 @@ async function ContentLoader(content: {[K: string]: any}, path: string[]){
     }
 }
 export const CONTENT_LOADERS: {[K: string]: (v: {[K: string]: any}, p: string[], index: string)=>Promise<void>;} = {}
-export const PRE_CLEAN = new PublicEvent();
+export const PRE_LOAD = new PublicEvent();
+export const AFTER_LOAD = new PublicEvent();

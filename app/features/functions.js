@@ -88,7 +88,7 @@ module.exports = {
         let isRelate = true;
         for (const path of paths) {
             if(path==".") isRelate = false;
-            if(path==".." && isRelate) roots.pop();
+            else if(path==".." && isRelate) roots.pop();
             else current.push(path);
         }
         return [...roots, ...current];
