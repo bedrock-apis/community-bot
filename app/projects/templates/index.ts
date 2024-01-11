@@ -91,7 +91,7 @@ class Template{
                 if(data.error || data.data?.toString?.() === GITHUB_NOT_FOUND_MESSAGE){
                     return { embeds:[new EmbedBuilder().setColor(0x4b2d31).setTitle(`Download of ${this.id} fails!`)]};
                 }
-                embed.setDescription(description + "\n```" + this.path.split(".").at(-1) + "\n" + data.data +  "\n```");
+                embed.setDescription(description + "\n```" + this.path.split(".").at(-1) + "\n" +resolveVariables(data.data?.toString()??"", context) +  "\n```");
                 break;
             case TemplateKind.image:
                 embed.setImage(GET_IMAGE(this.raw)??"");
