@@ -562,7 +562,7 @@ namespace SNBT{
             if(char === '"') key = readString(source) + "";
             else key = readSourceName(source);
             char = source.read();
-            if(readWhiteSpace(source)) char = source.read();
+            if(readWhiteSpace(source,char)) char = source.peek();
             if(char !== ":") throw new TypeError("Unexpected: " + char);
             if(readWhiteSpace(source)) char = source.peek();
             const kind = readSNBTType(source);
@@ -601,9 +601,9 @@ namespace SNBT{
         }
         throw new ReferenceError("Unexpected end of input");
     }
-    function readWhiteSpace(source: Source){
+    function readWhiteSpace(source: Source, char = source.peek()){
         let i = 0;
-        while(whiteSpace.includes(source.peek())) source.offset++, i++;
+        while(whiteSpace.includes(char)) source.offset++, char = source.peek();
         return i;
     }
     export function read(string: string){
