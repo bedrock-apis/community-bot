@@ -82,13 +82,16 @@ module.exports = {
         return mostMatchingResult;
     },
     getPaths(root, pathLike){
+        const current = [];
         const paths = pathLike.split("/");
-        if(paths[0] === "."){ 
-            paths[0] = root;
-            return paths;
-        } else {
-            return [root, ...paths];
+        const roots = root.split("/");
+        let isRelate = true;
+        for (const path of paths) {
+            if(path==".") isRelate = false;
+            if(path==".." && isRelate) roots.pop();
+            else current.push(path);
         }
+        return [...roots, ...current];
     },
     hasCodeBlock(str, lang = "") {
         const start = str.indexOf(`\`\`\`${lang}`);

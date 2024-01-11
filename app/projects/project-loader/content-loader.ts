@@ -1,8 +1,9 @@
-import { BOT_RESOURCES_REPO_ROOT_RAW, GITHUB_NOT_FOUND_MESSAGE, SafeDownloadContent, getPaths } from "../../features";
+import { BOT_RESOURCES_REPO_ROOT_RAW, GITHUB_NOT_FOUND_MESSAGE, PublicEvent, SafeDownloadContent, TriggerEvent, getPaths } from "../../features";
 import { LoadAll } from "./main_variables";
 
 export async function loadJob(){
     const taskBariableLoad = LoadAll();
+    const preTask = TriggerEvent(PRE_CLEAN);
     const baseContents = await SafeDownloadContent(BOT_RESOURCES_REPO_ROOT_RAW + "/contents.json");
     if(baseContents.error || baseContents.data?.toString?.() === GITHUB_NOT_FOUND_MESSAGE) throw baseContents.error??GITHUB_NOT_FOUND_MESSAGE;
     const contents = JSON.parse(baseContents.data?.toString("utf-8")??"") as string[];
@@ -14,6 +15,7 @@ export async function loadJob(){
         paths.push(path);
     }
     let resolvedTasks = await Promise.all(tasks);
+    await Promise.all(preTask);
     tasks = [];
     let i = 0;
     for (const {error,data} of resolvedTasks) {
@@ -38,3 +40,4 @@ async function ContentLoader(content: {[K: string]: any}, path: string[]){
     }
 }
 export const CONTENT_LOADERS: {[K: string]: (v: {[K: string]: any}, p: string[], index: string)=>Promise<void>;} = {}
+export const PRE_CLEAN = new PublicEvent();

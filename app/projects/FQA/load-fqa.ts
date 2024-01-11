@@ -1,8 +1,9 @@
-import { CONTENT_LOADERS } from "../project-loader/content-loader";
+import { CONTENT_LOADERS, PRE_CLEAN } from "../project-loader/content-loader";
 import { GetGithubContent, getPaths } from "../../features";
 
 let FQA_ENTRIES: {[K:string]: FQAEntry} = {};
 export const GET_FQA_ENTIRES = ()=>FQA_ENTRIES;
+PRE_CLEAN.subscribe(()=>FQA_ENTRIES = {});
 CONTENT_LOADERS["fqa"] = async function SetContent(v,paths){
     const basePath = paths.join("/");
     let tasks = [];
@@ -38,6 +39,6 @@ export class FQAEntry{
 
 export function BuildEntryFQA(raw: any, file: string){
     const tags = raw.tags?.filter((e: string)=>typeof e === "string")??[];
-    const entry = new FQAEntry(file, tags, raw.title, raw.body, raw.image);
+    const entry = new FQAEntry(file, tags, raw.title, raw.body, raw.image, raw.link);
     return entry;
 }
