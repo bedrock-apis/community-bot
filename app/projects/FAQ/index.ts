@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { client } from "../../discord";
 import { EMBED_BACKGROUND, searchFor } from "../../features";
-import { BuildEntryFQA, FQAEntry, GET_FQA_ENTIRES } from "./load-fqa";
+import { BuildEntryFQA, FAQEntry, GET_FQA_ENTIRES } from "./load-faq";
 import { Context, RESOURCES, resolveVariables } from "../project-loader";
 
 
@@ -49,7 +49,7 @@ client.registryCommand(
     }
 )
 
-function buildEmbed(fqa: FQAEntry, context: Context){
+function buildEmbed(fqa: FAQEntry, context: Context){
     const embed = new EmbedBuilder().setColor(EMBED_BACKGROUND).setTitle("FQA - Title");
     if(fqa.title) embed.setTitle(resolveVariables(fqa.title,context));
     if(fqa.body) embed.setDescription(resolveVariables(fqa.body,context));
