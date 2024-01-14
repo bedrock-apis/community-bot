@@ -41,6 +41,7 @@ client.registryCommand(
 client.registryCommand(
     new SlashCommandBuilder().setName("reload").setDescription("Reloads all resources").setDefaultMemberPermissions(0),
     async (client, commandName, interaction)=>{
+        if(interaction.user.id !== '805533255121109022') return; //OWNER ID
         console.warn("Reloading resources");
         await interaction.reply({
             embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Reloading . . .`)]

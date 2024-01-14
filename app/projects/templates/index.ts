@@ -79,7 +79,6 @@ class Template{
         this.link = link;
     }
     async messagePayload(context: Context): Promise<BaseMessageOptions>{
-        console.warn("Path: ",this.path);
         const embed = new EmbedBuilder().setColor(0x2b2d31);
         embed.setTitle(this.name?resolveVariables(this.name,context):this.id);
         const description = this.description?resolveVariables(this.description,context):"";
