@@ -29,15 +29,7 @@ client.registryCommand(
         });
     }
 );
-
-client.registryCommand(
-    new SlashCommandBuilder().setName("lmao").setDescription("Lol, its so funny"),
-    async (client, commandName, interaction)=>{
-        await interaction.reply({
-            embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`What is so funny?`).setDescription("Everything is fine for me, if not, let our moderators know.")]
-        });
-    }
-); 
+ 
 client.registryCommand(
     new SlashCommandBuilder().setName("reload").setDescription("Reloads all resources").setDefaultMemberPermissions(0),
     async (client, commandName, interaction)=>{
