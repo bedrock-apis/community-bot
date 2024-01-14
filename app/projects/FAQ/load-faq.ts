@@ -1,10 +1,10 @@
 import { CONTENT_LOADERS, PRE_LOAD } from "../project-loader/content-loader";
 import { GetGithubContent, getPaths } from "../../features";
 
-let FQA_ENTRIES: {[K:string]: FQAEntry} = {};
+let FQA_ENTRIES: {[K:string]: FAQEntry} = {};
 export const GET_FQA_ENTIRES = ()=>FQA_ENTRIES;
 PRE_LOAD.subscribe(()=>FQA_ENTRIES = {});
-CONTENT_LOADERS["fqa"] = async function SetContent(v,paths){
+CONTENT_LOADERS["faq"] = async function SetContent(v,paths){
     const basePath = paths.join("/");
     let tasks = [];
     if(Array.isArray(v.files)) for (const fqaFile of v.files) {
@@ -20,7 +20,7 @@ CONTENT_LOADERS["fqa"] = async function SetContent(v,paths){
     }
     await Promise.all(tasks);
 }
-export class FQAEntry{
+export class FAQEntry{
     readonly file;
     readonly title;
     readonly body;
@@ -39,6 +39,6 @@ export class FQAEntry{
 
 export function BuildEntryFQA(raw: any, file: string){
     const tags = raw.tags?.filter((e: string)=>typeof e === "string")??[];
-    const entry = new FQAEntry(file, tags, raw.title, raw.body, raw.image, raw.link);
+    const entry = new FAQEntry(file, tags, raw.title, raw.body, raw.image, raw.link);
     return entry;
 }
