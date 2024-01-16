@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { client } from "../../discord";
 import { EMBED_BACKGROUND, searchFor } from "../../features";
-import { BuildEntryFQA, FAQEntry, GET_FQA_ENTIRES } from "./load-faq";
+import { BuildEntryFQA, FAQEntry, GET_FQA_ENTIRES, GET_RAW_ENTRIES } from "./load-faq";
 import { Context, RESOURCES, resolveVariables } from "../project-loader";
 
 
@@ -61,3 +61,4 @@ function buildEmbed(fqa: FAQEntry, context: Context){
     }
     return embed;
 }
+client.onStats.subscribe(()=>{ return `faq-entries: ${GET_RAW_ENTRIES().length}`; })

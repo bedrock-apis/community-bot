@@ -1,6 +1,6 @@
 import {client} from "../../discord";
 import "./main_variables";
-import { loadJob } from "./content-loader";
+import { CONTENT_LOADERS, loadJob } from "./content-loader";
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { EmbedBuilder } from "@discordjs/builders";
 import { GET_VARIABLES } from "./main_variables";
@@ -8,7 +8,10 @@ import { Context, resolveVariables } from "./variables-manager";
 import { GET_IMAGES } from "./resources-manager";
 client.onReload.subscribe(async ()=>{
     await loadJob();
-})
+});
+client.onStats.subscribe(()=>`available-loaders: ${Object.keys(CONTENT_LOADERS).length}`);
+client.onStats.subscribe(()=>`available-images: ${Object.keys(GET_IMAGES()).length}`);
+client.onStats.subscribe(()=>`available-variables: ${Object.keys(GET_VARIABLES()).length}`);
 client.registryCommand(
     new SlashCommandBuilder()
     .addSubcommand(

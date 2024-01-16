@@ -10,6 +10,10 @@ import { AFTER_LOAD, CONTENT_LOADERS, PRE_LOAD } from "../project-loader/content
 import { getPaths, GITHUB_NOT_FOUND_MESSAGE, SafeDownloadContent } from "../../features";
 import { Context, resolveVariables } from "../project-loader/variables-manager";
 import { GET_IMAGE } from "../project-loader";
+
+
+
+
 let TEMPLATES: {
     [K: string]: Template
 } = {};
@@ -18,6 +22,9 @@ export enum TemplateKind{
     content="content",
     image="image"
 }
+
+
+client.onStats.subscribe(()=>`available-templates: ${Object.keys(TEMPLATES).length}`);
 async function onInteraction(client: Client, commandName: string, interaction: ChatInputCommandInteraction<CacheType>){
     const templateId = interaction.options.getString("template-id");
     if(templateId && templateId in TEMPLATES) {

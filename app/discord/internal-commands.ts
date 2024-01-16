@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder, SlashCommandNumberOption } from "discord.js";
 import {client} from "./client";
-import { TriggerEvent, uuidv4 } from "../features";
+import { EMBED_BACKGROUND, GUILD_IDS, TriggerEvent, uuidv4 } from "../features";
 
 client.registryCommand(
     new SlashCommandBuilder().setName("ping").setDescription("Check my latency!"),
@@ -33,14 +33,27 @@ client.registryCommand(
 client.registryCommand(
     new SlashCommandBuilder().setName("reload").setDescription("Reloads all resources").setDefaultMemberPermissions(0),
     async (client, commandName, interaction)=>{
-        if(interaction.user.id !== '805533255121109022') return; //OWNER ID
-        console.warn("Reloading resources");
+        const time =Date.now();
         await interaction.reply({
-            embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Reloading . . .`)]
+            embeds: [new EmbedBuilder().setColor(0x303031).setTitle(`Reloading Resources`).setDescription("```properties\n...\n```")],
+            ephemeral: true
         });
         await Promise.all(TriggerEvent(client.onReload));
+        const properties = await Promise.all(TriggerEvent(client.onStats));
+        client.sendInfo({
+            embeds: [
+                new EmbedBuilder()
+                .setColor(EMBED_BACKGROUND).setTitle("Bot - Reloaded").setFooter({
+                    text:interaction.user.username,
+                    iconURL: interaction.user.avatarURL({forceStatic:true})??interaction.user.defaultAvatarURL
+                })
+                .setDescription("```properties\n" + properties.join("\n") + "\n```")
+                .setTimestamp(new Date())
+            ]
+        })
         await interaction.editReply({
-            embeds: [new EmbedBuilder().setColor(0x2b4d31).setTitle(`Reloaded`)]
+            embeds: [new EmbedBuilder().setColor(0x2b4d31).setTitle("Reloaded in `" + (Date.now()-time) + "` ms").setDescription("```properties\n" + properties.join("\n") + "\n```")]
         });
-    }
+    },
+    GUILD_IDS
 );
