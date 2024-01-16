@@ -1,11 +1,13 @@
-import { BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, SlashCommandBuilder} from "discord.js";
-import { PublicEvent, TriggerEvent } from "../features";
+import { BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, Embed, EmbedBuilder, GatewayIntentBits, Interaction, MessageCreateOptions, MessagePayload, SlashCommandBuilder} from "discord.js";
+import { EMBED_BACKGROUND, MAIN_CHANNEL_ID, MAIN_GUILD, PublicEvent, TriggerEvent } from "../features";
 
 export class Client extends CL<true>{
     readonly _commandDefinitions = new Map<string,BaseApplicationCommandData>();
+    readonly _guildCommandDefinitions = new Map<string,{scopes: string[], definition:BaseApplicationCommandData}>();
     readonly _commandHandlers = new WeakMap<BaseApplicationCommandData,(n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void>();
     readonly onReload = new PublicEvent<[]>;
     readonly onButtonPress = new PublicEvent<[string,ButtonInteraction]>;
+    readonly onStats = new PublicEvent<[]>;
     //readonly onCommandInteractionEvent = new PublicEvent<[]>
     constructor(){
         super({
@@ -13,23 +15,41 @@ export class Client extends CL<true>{
         });
         this.on("ready",this.onReady as any);
         this.on("interactionCreate",this.onInteraction);
+        this.onStats.subscribe(()=>`available-commands: ${this._commandDefinitions.size}`);
+        this.onStats.subscribe(()=>`available-guild-commands: ${this._guildCommandDefinitions.size}`);
+        this.onStats.subscribe(()=>`guild-count: ${this.guilds.cache.size}`);
     }
     protected async onReady(){
         console.log("[Client] Logged in as", this.user.displayName);
         await Promise.all(TriggerEvent(this.onReload));
-        this.LoadCommands();
+        await this.LoadCommands();
+        const stats = await Promise.all(TriggerEvent(this.onStats));
+        this.sendInfo({
+            embeds: [
+                new EmbedBuilder()
+                .setColor(EMBED_BACKGROUND).setTitle("Bot - Ready")
+                .setDescription("```properties\n" + stats.join("\n") + "\n```")
+                .setTimestamp(new Date())
+            ]
+        })
     }
     async LoadCommands(){
         //@ts-ignore
         this.application.commands.set([...this._commandDefinitions.values()]);
         console.log("[Client][Commands][Registry]", this._commandDefinitions.size,"commands were successfully registered");
+        this.guilds.cache.forEach(e=>{
+            const commands = Array.from(this._guildCommandDefinitions.values()).filter(d=>d.scopes.includes(e.id)).map(e=>e.definition);
+            
+            //@ts-ignore
+            if(commands.length) e.commands.set(commands);
+        })
     }
     protected async onInteraction(interaction: Interaction){
         try {
             if(interaction.isCommand()) {
-                console.log("Command -> " + interaction.commandName);
-                const a = this._commandDefinitions.get(interaction.commandName);
+                const a = this._commandDefinitions.get(interaction.commandName)??this._guildCommandDefinitions.get(interaction.commandName)?.definition;
                 if(this._commandHandlers.has(a as any)) await this._commandHandlers.get(a as any)?.(this,interaction.commandName, interaction);
+                else console.warn("Unknown interaction: " + interaction.commandName);
             }else if(interaction.isButton()){
                 await TriggerEvent(this.onButtonPress,interaction.customId,interaction);
             }
@@ -53,14 +73,21 @@ export class Client extends CL<true>{
         } while (true);
     }
     //@ts-ignore
-    registryCommand(commandDefinition: ContextMenuCommandBuilder, handler: (n: this,commandname: string, interaction: ContextMenuCommandInteraction<CacheType>)=>void): this
-    registryCommand(commandDefinition: Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">, handler: (n: this,commandname: string, interaction: ChatInputCommandInteraction<CacheType>)=>void): this
-    registryCommand(commandDefinition: BaseApplicationCommandData, handler: (n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void)
+    registryCommand(commandDefinition: ContextMenuCommandBuilder, handler: (n: this,commandname: string, interaction: ContextMenuCommandInteraction<CacheType>)=>void, scope?: string[] | null): this
+    registryCommand(commandDefinition: Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">, handler: (n: this,commandname: string, interaction: ChatInputCommandInteraction<CacheType>)=>void, scope?: string[] | null): this
+    registryCommand(commandDefinition: BaseApplicationCommandData, handler: (n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void, scope: string[] | null = null)
     {
         const commandName = commandDefinition.name;
-        this._commandDefinitions.set(commandName,commandDefinition);
+        if(scope) {
+            this._guildCommandDefinitions.set(commandName, {scopes: scope, definition: commandDefinition});
+        }
+        else this._commandDefinitions.set(commandName,commandDefinition);
         this._commandHandlers.set(commandDefinition,handler as any);
         return this;
+    }
+    sendInfo(msg: MessagePayload | string | MessageCreateOptions){
+        const channel = this.guilds.cache.get(MAIN_GUILD)?.channels?.cache?.get(MAIN_CHANNEL_ID);
+        if(channel && channel.isTextBased()) channel.send(msg);
     }
 }
 export const client = new Client();
