@@ -14,3 +14,4 @@
 
 ## Before commiting changes
  - Check `\app\projects\index.ts` and make sure all experimental features are commented and no imported
+ - If you are creating new project for this bot, you should always ask owners for permission
