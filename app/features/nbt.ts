@@ -283,7 +283,7 @@ export class NBTFile{
     static TagFromSNBT(string: string){
         return SNBT.read(string);
     }
-    static Write(file: NBTFile, buffer: Buffer){
+    static Write(file: NBTFile, buffer?: Buffer){
         const byteSize = file.byteLength; 
         buffer = buffer??Buffer.alloc(byteSize);
         if(buffer.byteLength < byteSize) throw new RangeError("Buffer size is not low, can't not save this NBTFile");
@@ -295,6 +295,17 @@ export class NBTFile{
         stream.writeByte(file.value.type);
         NBT_Writers[NBTTag.String](stream,{value:file.name??""} as StringValue);
         NBT_Writers[file.value.type as 1](stream, file.value as any);
+        return buffer;
+    }
+    static WriteTag(tag: NBTValue<any>, buffer?: Buffer){
+        const byteSize = tag.byteLength; 
+        buffer = buffer??Buffer.alloc(byteSize + 3);
+        if(buffer.byteLength < byteSize) throw new RangeError("Buffer size is not low, can't not save this NBTFile");
+
+        const stream = new Stream(buffer,0);
+        stream.writeByte(tag.type);
+        NBT_Writers[NBTTag.String](stream,{value:""} as StringValue);
+        NBT_Writers[tag.type as 1](stream, tag as any);
         return buffer;
     }
     /**@returns {boolean} @param {Buffer} buffer*/
@@ -400,7 +411,7 @@ const NBT_Readers = {
 }
 const NBT_Writers = {
     [NBTTag.Compoud](myStream: Stream, value: CompoudValue){
-        for (const [key,v] of value) {
+        for (const [key,v] of value.entries()) {
             const type = v.type;
             myStream.writeByte(type);
             const length = myStream.buffer.write(key,myStream.offset + 2,"utf8");
