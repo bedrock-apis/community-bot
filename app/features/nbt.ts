@@ -460,7 +460,7 @@ const NUMBER_NBT_CONTRUCTORS = {
     "f":FloatValue,
     "d":DoubleValue,
 }
-namespace SNBT{
+namespace SNBT{ 
     const kinds = {
         "string": readString,
         "compoud": readCompoud,

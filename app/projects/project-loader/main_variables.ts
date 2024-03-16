@@ -1,16 +1,8 @@
 import { BDS_VERSIONS_GIT_FILE, GetGithubContent, uuidv4 } from "../../features";
 import { Package } from "../../features/npm";
+import { NATIVE_MODULE_NAMES, NPM_MODULES } from "../constants/modules";
 import { DynamicVariables } from "./variables-manager";
 
-const module_names = [
-    "common",
-    "server",
-    "server-ui",
-    "server-editor",
-    "server-net",
-    "server-admin",
-    "server-gametest"
-];
 const versions = [
     "stable",
     "preview"
@@ -46,7 +38,8 @@ function getEngine(version: string){
 }
 async function buildModuleDynamicVariables(){
     let tasks = [];
-    for (const module_name of module_names){
+    for (const module_name of NATIVE_MODULE_NAMES){
+        if(!NPM_MODULES.includes(module_name)) continue;
         let task = Package.Load("@minecraft/"+module_name) as Promise<any>;
         task = task.then(p=>{
             const {name, tags, versions} = p;

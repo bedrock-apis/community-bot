@@ -40,7 +40,7 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
             const snbt = file.toSNBT("  ");
             const lines = snbt.split("\n").slice(0,15);
             return interaction.reply({
-                embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`SNBT`).setDescription("```properties\n" + lines.join("\n") + (lines.length>15?"\n...\n":"") + "\n```")],
+                embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`SNBT - Preview`).setDescription("```properties\n" + lines.join("\n") + (lines.length>15?"\n...\n":"") + "\n```")],
                 files: [
                     new AttachmentBuilder(Buffer.from(snbt), {description: "Stringified " + attachment.name, name: "output.txt"})
                 ]

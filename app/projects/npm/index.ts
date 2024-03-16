@@ -1,27 +1,11 @@
 import {client} from "../../discord";
 import { SlashCommandBuilder, EmbedBuilder, SlashCommandSubcommandBuilder, ChatInputCommandInteraction, CacheType } from "discord.js";
 import { Package, PackageVersion } from "../../features/npm";
+import { NPM_MODULES } from "../constants/modules";
 
-const choices = [
-    {value:"minecraft-server",name:"@minecraft/server"},
-    {value:"minecraft-common",name:"@minecraft/common"},
-    {value:"minecraft-server-ui",name:"@minecraft/server-ui"},
-    {value:"minecraft-server-editor",name:"@minecraft/server-editor"},
-    {value:"minecraft-server-gametest",name:"@minecraft/server-gametest"},
-    {value:"minecraft-server-net",name:"@minecraft/server-net"},
-    {value:"minecraft-server-admin",name:"@minecraft/server-admin"},
-    {value:"minecraft-vanilla-data",name:"@minecraft/vanilla-data"},
-]
-const packages: {[k: string]: string} = {
-    "minecraft-common":"@minecraft/common",
-    "minecraft-server":"@minecraft/server",
-    "minecraft-server-ui":"@minecraft/server-ui",
-    "minecraft-server-editor":"@minecraft/server-editor",
-    "minecraft-server-gametest":"@minecraft/server-gametest",
-    "minecraft-server-net":"@minecraft/server-net",
-    "minecraft-server-admin":"@minecraft/server-admin",
-    "minecraft-vanilla-data":"@minecraft/vanilla-data"
-}
+const choices = NPM_MODULES.map(e=>({value: e, name: "@minecraft/"+e}));
+const packages: {[k: string]: string} = {};
+NPM_MODULES.forEach(e=>packages[e] = "@minecraft/" + e);
 client.registryCommand(
     new SlashCommandBuilder().addSubcommand(
         new SlashCommandSubcommandBuilder().setName("get").setDescription("Gets package information")
