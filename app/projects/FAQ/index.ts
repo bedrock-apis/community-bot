@@ -3,6 +3,7 @@ import { client } from "../../discord";
 import { EMBED_BACKGROUND, searchFor } from "../../features";
 import { BuildEntryFQA, FAQEntry, GET_FQA_ENTIRES, GET_RAW_ENTRIES } from "./load-faq";
 import { Context, RESOURCES, resolveVariables } from "../project-loader";
+import "./manager";
 
 
 
