@@ -20,7 +20,7 @@ export class Client extends CL<true>{
         this.onStats.subscribe(()=>`guild-count: ${this.guilds.cache.size}`);
     }
     protected async onReady(){
-        console.log("[Client] Logged in as", this.user.displayName);
+        console.log("[Client] Logged in as ", this.user.displayName);
         await Promise.all(TriggerEvent(this.onReload));
         await this.LoadCommands();
         const stats = await Promise.all(TriggerEvent(this.onStats));

@@ -2,7 +2,7 @@
   "name": "bedrock-apis-bot",
   "version": "1.0.0",
   "description": "Source of Bedrock API's Application",
-  "main": "bin/index.js",
+  "main": "dist/index.js",
   "type": "commonjs",
   "scripts": {
     "dev": "powershell -ExecutionPolicy ByPass -File \".\\dev.ps1\"",
