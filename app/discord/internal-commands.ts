@@ -38,7 +38,7 @@ client.registryCommand(
             embeds: [new EmbedBuilder().setColor(0x303031).setTitle(`Reloading Resources`).setDescription("```properties\n...\n```")],
             ephemeral: true
         });
-        await Promise.all(TriggerEvent(client.onReload));
+        await client.reload();
         const properties = await Promise.all(TriggerEvent(client.onStats));
         client.sendInfo({
             embeds: [

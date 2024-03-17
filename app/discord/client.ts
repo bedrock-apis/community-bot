@@ -2,6 +2,7 @@ import { BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType,
 import { EMBED_BACKGROUND, MAIN_CHANNEL_ID, MAIN_GUILD, PublicEvent, TriggerEvent } from "../features";
 
 export class Client extends CL<true>{
+    isReloading?: Promise<void>;
     readonly _commandDefinitions = new Map<string,BaseApplicationCommandData>();
     readonly _guildCommandDefinitions = new Map<string,{scopes: string[], definition:BaseApplicationCommandData}>();
     readonly _commandHandlers = new WeakMap<BaseApplicationCommandData,(n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void>();
@@ -21,7 +22,7 @@ export class Client extends CL<true>{
     }
     protected async onReady(){
         console.log("[Client] Logged in as ", this.user.displayName);
-        await Promise.all(TriggerEvent(this.onReload));
+        await this.reload();
         await this.LoadCommands();
         const stats = await Promise.all(TriggerEvent(this.onStats));
         this.sendInfo({
@@ -32,6 +33,7 @@ export class Client extends CL<true>{
                 .setTimestamp(new Date())
             ]
         })
+        setInterval(()=>this.reload(), 30 * 60 * 1000);
     }
     async LoadCommands(){
         //@ts-ignore
@@ -88,6 +90,14 @@ export class Client extends CL<true>{
     sendInfo(msg: MessagePayload | string | MessageCreateOptions){
         const channel = this.guilds.cache.get(MAIN_GUILD)?.channels?.cache?.get(MAIN_CHANNEL_ID);
         if(channel && channel.isTextBased()) channel.send(msg);
+    }
+    async reload(){
+        try {
+            if(this.isReloading) return this.isReloading;
+            return this.isReloading = Promise.all(TriggerEvent(this.onReload)) as any;
+        } finally {
+            this.isReloading = undefined;
+        }
     }
 }
 export const client = new Client();
