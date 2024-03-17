@@ -15,7 +15,7 @@ client.registryCommand(
         new SlashCommandSubcommandBuilder().setName("info").setDescription("Gets the package information")
         .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
     ).addSubcommand(
-        new SlashCommandSubcommandBuilder().setName("list").setDescription("Gets the list of package versions")
+        new SlashCommandSubcommandBuilder().setName("current").setDescription("Gets the list of current versions for specified package")
         .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
     ).addSubcommand(
         new SlashCommandSubcommandBuilder().setName("versions").setDescription("Gets the list of package versions")
@@ -61,7 +61,7 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
             embeds: [getPackageInfoEmbed(pack)]
         });
     },
-    async "list"(interaction){
+    async "current"(interaction){
         const pack = await Package.Load(packages[interaction.options.getString("package-id") as any]);
         await interaction.reply({
             embeds: [getPackageVersionListInfoEmbed(pack)]
@@ -175,7 +175,7 @@ function getPackageVersionListInfoEmbed(packageVersion: Package){
             const {version, zipFile} = pVersion;
             arraysIntall[index] = {
                 name:text,
-                value:`\`\`\`properties\nnpm i ${name}@${version}\n\`\`\``,
+                value:`[Download](${zipFile})\n\`\`\`properties\nnpm i ${name}@${version}\n\`\`\``,
                 inline: false
             };
         }
@@ -184,7 +184,7 @@ function getPackageVersionListInfoEmbed(packageVersion: Package){
         if(k.endsWith("-stable")){
             arraysIntall[1] = {
                 name:"Stable  •  Experimental",
-                value:`\`\`\`properties\nnpm i ${name}@${version.version}\n\`\`\``,
+                value:`[Download.tgz](${version.zipFile})\n\`\`\`properties\nnpm i ${name}@${version.version}\n\`\`\``,
                 inline: false
             };
             break;
