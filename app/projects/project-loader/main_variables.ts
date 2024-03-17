@@ -13,7 +13,7 @@ dynamicVariables.defineVariable$("new.uuid", ()=>uuidv4());
 export async function LoadAll(){
     VARIABLES = Object.setPrototypeOf({}, dynamicVariables) as DynamicVariables;
     await Promise.all([
-        buildModuleDynamicVariables().catch(er=>console.error(er)),
+        //buildModuleDynamicVariables().catch(er=>console.error(er)),
         bdsDynamicVariables().catch(er=>console.error(er))
     ]);
 }
