@@ -7,8 +7,8 @@ import { Context, RESOURCES, resolveVariables } from "../project-loader";
 
 
 client.on("messageCreate",(e)=>{
-    if(e.content.startsWith("??")) {
-        const text = e.content.replaceAll(/^\?+([ ]+|)/g,"");
+    if(e.content.match(/^([ ]+|)\?\?+/g)) {
+        const text = e.content.replaceAll(/^([ ]+|)\?\?+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-\_\*\/\\\,\;]+/g,"-");
         const ENTRIES = GET_FQA_ENTIRES();
         const keys = Object.keys(ENTRIES);
         const key = searchFor(text, keys);
