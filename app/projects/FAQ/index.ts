@@ -7,8 +7,9 @@ import { Context, RESOURCES, resolveVariables } from "../project-loader";
 
 
 client.on("messageCreate",(e)=>{
-    if(e.content.match(/^([ ]+|)\?\?+/g)) {
-        const text = e.content.replaceAll(/^([ ]+|)\?\?+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-\_\*\/\\\,\;]+/g,"-");
+    const content = e.content;
+    if(content.match(/^([ ]+|)\?\?+/g)) {
+        const text = content.replaceAll(/^([ ]+|)\?\?+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-\_\*\/\\\,\;]+/g,"-");
         const ENTRIES = GET_FQA_ENTIRES();
         const keys = Object.keys(ENTRIES);
         const key = searchFor(text, keys);
@@ -18,6 +19,13 @@ client.on("messageCreate",(e)=>{
             embeds:[
                 buildEmbed(FQA, Context.FromMessage(e))
             ]
+        });
+    } else if(content.match(/^([ ]+|)\!\!+/g) && e.member){
+        const text = content.replaceAll(/^([ ]+|)\!\!+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-\_\*\/\\\,\;]+/g,"-");
+        const a = searchFor(text, ["edit", "create", "edit-tags", "remove"]);
+        e.reply({
+            flags:[4096],
+            content:a +": "+ e.member.roles.cache.map(e=>`<@&${e.id}>`).join(" | ") + " has: Testing role " + e.member.roles.cache.has("1222205753369169920")
         });
     }
 });
