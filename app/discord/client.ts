@@ -3,6 +3,7 @@ import { EMBED_BACKGROUND, MAIN_CHANNEL_ID, MAIN_GUILD, PublicEvent, TriggerEven
 
 export class Client extends CL<true>{
     isReloading?: Promise<void>;
+    get readyState(){ return this.isReloading == null && this.isReady();}
     readonly _commandDefinitions = new Map<string,BaseApplicationCommandData>();
     readonly _guildCommandDefinitions = new Map<string,{scopes: string[], definition:BaseApplicationCommandData}>();
     readonly _commandHandlers = new WeakMap<BaseApplicationCommandData,(n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void>();
@@ -12,7 +13,7 @@ export class Client extends CL<true>{
     //readonly onCommandInteractionEvent = new PublicEvent<[]>
     constructor(){
         super({
-            intents: GatewayIntentBits.GuildMessages | GatewayIntentBits.Guilds | GatewayIntentBits.MessageContent
+            intents: GatewayIntentBits.GuildMessages | GatewayIntentBits.Guilds | GatewayIntentBits.MessageContent | GatewayIntentBits.GuildMessageReactions
         });
         this.on("ready",this.onReady as any);
         this.on("interactionCreate",this.onInteraction);
@@ -48,6 +49,12 @@ export class Client extends CL<true>{
     }
     protected async onInteraction(interaction: Interaction){
         try {
+            if(!this.readyState){
+                if(interaction.isRepliable()){
+                    interaction.reply({ephemeral:true, content: "Bot is in loading state, please wait until bot is loaded."})
+                }
+                return;
+            }
             if(interaction.isCommand()) {
                 const a = this._commandDefinitions.get(interaction.commandName)??this._guildCommandDefinitions.get(interaction.commandName)?.definition;
                 if(this._commandHandlers.has(a as any)) await this._commandHandlers.get(a as any)?.(this,interaction.commandName, interaction);
@@ -93,10 +100,13 @@ export class Client extends CL<true>{
     }
     async reload(){
         try {
-            if(this.isReloading) return this.isReloading;
-            return this.isReloading = Promise.all(TriggerEvent(this.onReload)) as any;
+            if(this.isReloading) return await this.isReloading;
+            return await (this.isReloading = new Promise(res=>{
+                const p = Promise.all(TriggerEvent(this.onReload)) as any;
+                setTimeout(res,5000, p);
+            }));
         } finally {
-            this.isReloading = undefined;
+            if(this.isReloading) this.isReloading = undefined;
         }
     }
 }

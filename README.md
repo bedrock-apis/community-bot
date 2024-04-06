@@ -6,7 +6,6 @@
    $env:DEV_CHANNEL_ID = "dev-channel-id";
    $env:DEV_RESOURCES = "https://raw.githubusercontent.com/bedrock-apis/bot-resources/development"; #Your forked resources if you modify code for resource loaders such as FQA or Templates
    npx tsc
-   Copy-Item -Path "./app/features/functions.js" -Destination "./bin/features/functions.js"
    Write-Output "Compiled, Running JS"
    node .
    ```

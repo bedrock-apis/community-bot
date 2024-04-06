@@ -1,12 +1,25 @@
-import { EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
+import { EmbedBuilder,  Emoji,  GuildEmoji,  Message,  SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { client } from "../../discord";
-import { EMBED_BACKGROUND, searchFor } from "../../features";
+import { CANCEL_EMOJI_IDENTIFIER, CANCEL_REACTION_TIMEOUT, EMBED_BACKGROUND, searchFor } from "../../features";
 import { BuildEntryFQA, FAQEntry, GET_FQA_ENTIRES, GET_RAW_ENTRIES } from "./load-faq";
 import { Context, RESOURCES, resolveVariables } from "../project-loader";
 
+const currentMessages = new Map<string, {message:Message<boolean>, time: NodeJS.Timeout}>();
 
-
-client.on("messageCreate",(e)=>{
+client.on("messageReactionAdd", async (e, s)=>{
+    if(s.id === e.client.user.id) return;
+    const data = currentMessages.get(e.message.id);
+    if(data){
+        const {message, time} = data;
+        if(message.id === e.message.id && e.emoji.identifier === CANCEL_EMOJI_IDENTIFIER){
+            currentMessages.delete(message.id);
+            clearTimeout(time);
+            await message.delete();
+        }
+    }
+});
+client.on("messageCreate",async (e)=>{
+    if(e.member?.user.id === e.client.user.id) return;
     const content = e.content;
     if(content.match(/^([ ]+|)\?\?+/g)) {
         const text = content.replaceAll(/^([ ]+|)\?\?+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-\_\*\/\\\,\;]+/g,"-");
@@ -15,11 +28,18 @@ client.on("messageCreate",(e)=>{
         const key = searchFor(text, keys);
         if(!key) return;
         const FQA = ENTRIES[key];
-        e.reply({
+        const m = await e.reply({
             embeds:[
                 buildEmbed(FQA, Context.FromMessage(e))
-            ]
+            ],
+            allowedMentions:{parse:[]}
         });
+        const timeId = setTimeout(()=>{
+            currentMessages.delete(m.id);
+            m.reactions.removeAll();
+        }, CANCEL_REACTION_TIMEOUT);
+        currentMessages.set(m.id, {message:m, time: timeId});
+        m.react(CANCEL_EMOJI_IDENTIFIER);
     } else if(content.match(/^([ ]+|)\!\!+/g) && e.member){
         const text = content.replaceAll(/^([ ]+|)\!\!+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-\_\*\/\\\,\;]+/g,"-");
         const a = searchFor(text, ["edit", "create", "edit-tags", "remove"]);
@@ -56,7 +76,6 @@ client.registryCommand(
         }
     }
 )
-
 function buildEmbed(fqa: FAQEntry, context: Context){
     const embed = new EmbedBuilder().setColor(EMBED_BACKGROUND).setTitle("FQA - Title");
     if(fqa.title) embed.setTitle(resolveVariables(fqa.title,context));

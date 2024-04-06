@@ -110,6 +110,6 @@
     "app/**/*"
   ],
   "exclude": [
-    "app/features/functions.js"
+    "app/features/functions.ts"
   ]
 }
