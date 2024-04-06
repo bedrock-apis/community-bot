@@ -175,7 +175,7 @@ function getPackageVersionListInfoEmbed(packageVersion: Package){
             const {version, zipFile} = pVersion;
             arraysIntall[index] = {
                 name:text,
-                value:`[Download](${zipFile})\n\`\`\`properties\nnpm i ${name}@${version}\n\`\`\``,
+                value:`\`\`\`properties\nnpm i ${name}@${version}\n\`\`\` [Download](${zipFile})`,
                 inline: false
             };
         }
@@ -184,7 +184,7 @@ function getPackageVersionListInfoEmbed(packageVersion: Package){
         if(k.endsWith("-stable")){
             arraysIntall[1] = {
                 name:"Stable  •  Experimental",
-                value:`[Download.tgz](${version.zipFile})\n\`\`\`properties\nnpm i ${name}@${version.version}\n\`\`\``,
+                value:`\`\`\`properties\nnpm i ${name}@${version.version}\n\`\`\` [Download](${version.zipFile})`,
                 inline: false
             };
             break;
