@@ -33,7 +33,7 @@ client.registryCommand(
 client.registryCommand(
     new SlashCommandBuilder().setName("reload").setDescription("Reloads all resources").setDefaultMemberPermissions(0),
     async (client, commandName, interaction)=>{
-        const time =Date.now();
+        const time = Date.now();
         await interaction.reply({
             embeds: [new EmbedBuilder().setColor(0x303031).setTitle(`Reloading Resources`).setDescription("```properties\n...\n```")],
             ephemeral: true

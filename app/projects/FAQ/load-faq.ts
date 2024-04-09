@@ -39,7 +39,6 @@ export class FAQEntry{
         this.link = link;
     }
 }
-
 export function BuildEntryFQA(raw: any, file: string){
     const tags = raw.tags?.filter((e: string)=>typeof e === "string")??[];
     const entry = new FAQEntry(file, tags, raw.title, raw.body, raw.image, raw.link);
