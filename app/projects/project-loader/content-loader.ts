@@ -23,7 +23,7 @@ export async function loadJob(){
         try {
             const text = data?.toString()??"";
             const sources = JSON.parse(text);
-            const newTask = ContentLoader(sources, paths.shift()??[]).catch(e=>console.log("Failed to run loader for: " + sources.type));
+            const newTask = ContentLoader(sources, paths.shift()??[], text).catch(e=>console.log("Failed to run loader for: " + sources.type));
             tasks.push(newTask.then(()=>i++).catch(e=>console.error(e.message)));
         } catch (error) { continue; }
     }
@@ -32,10 +32,12 @@ export async function loadJob(){
     await Promise.all(TriggerEvent(AFTER_LOAD));
     return i;
 }
-async function ContentLoader(content: {[K: string]: any}, path: string[]){
+async function ContentLoader(content: {[K: string]: any}, path: string[], raw: string){
     if(content.type in CONTENT_LOADERS) {
         const array = [...path];
-        await CONTENT_LOADERS[content.type](content, array, array.pop()??"");
+        const loader = CONTENT_LOADERS[content.type];
+        if("jsonParse" in loader) await CONTENT_LOADERS[content.type]((loader as any).jsonParse(raw), array, array.pop()??"");
+        else await CONTENT_LOADERS[content.type](content, array, array.pop()??"");
     }else{
         console.warn("[Project-Loader] No content loader for: " + content.type);
     }

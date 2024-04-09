@@ -1,6 +1,7 @@
 import "./project-loader"; //Internal Project loader - other projects need this core
 
 
+import "./general";
 import "./npm";
 import "./templates";
 import "./FAQ";
