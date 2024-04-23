@@ -24,7 +24,7 @@ client.on("messageCreate",async (e)=>{
     if(e.member?.user.id === e.client.user.id) return;
     const content = e.content;
     if(content.match(/^([ ]+|)\?\?+/g)) {
-        const text = content.replaceAll(/^([ ]+|)\?\?+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-\_\*\/\\\,\;]+/g,"-");
+        const text = content.replaceAll(/^([ ]+|)\?\?+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-_\*\/\\\,\;]+/g,"-");
         const ENTRIES = GET_FQA_ENTIRES();
         const keys = Object.keys(ENTRIES);
         const key = searchFor(text, keys);
@@ -38,7 +38,7 @@ client.on("messageCreate",async (e)=>{
         });
         const timeId = setTimeout(()=>{
             if(currentMessages.has(m.id)) currentMessages.delete(m.id);
-            m.reactions.removeAll();
+            m.reactions.removeAll().catch(()=>{});
         }, CANCEL_REACTION_TIMEOUT);
         currentMessages.set(m.id, {message:m, time: timeId, userId:e.member?.user.id??""});
         m.react(CANCEL_EMOJI_IDENTIFIER);
