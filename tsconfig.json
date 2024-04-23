@@ -108,8 +108,5 @@
   },
   "include": [
     "app/**/*"
-  ],
-  "exclude": [
-    "app/features/functions.ts"
   ]
 }

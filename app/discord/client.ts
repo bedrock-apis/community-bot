@@ -103,7 +103,7 @@ export class Client extends CL<true>{
             if(this.isReloading) return await this.isReloading;
             return await (this.isReloading = new Promise(res=>{
                 const p = Promise.all(TriggerEvent(this.onReload)) as any;
-                setTimeout(res,5000, p);
+                setTimeout(res,100, p);
             }));
         } finally {
             if(this.isReloading) this.isReloading = undefined;
