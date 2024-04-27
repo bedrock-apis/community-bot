@@ -1,4 +1,3 @@
-import { fileURLToPath } from "url";
 import { GITHUB_NOT_FOUND_MESSAGE } from "./constants";
 export function uuidv4() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -55,27 +54,39 @@ export function getLine(text: string, length: number): [number, number]{
     }
     return [0,0];
 }
-export function searchFor(text: string, possibleResults: string[]){
-    let matchCounts = {} as any;
-    for (let i = 0; i < possibleResults.length; i++) {
-      const currentResult = possibleResults[i];
-      let matchCount = 0;
-      for (let j = 0; j < text.length; j++) {
-        if (currentResult.includes(text[j])) {
-          matchCount++;
+export function calculateSimilarity(text: string, text2: string){
+    const w1l = text.length;
+    const w2l = text2.length;
+    const matrix = Array.from({ length: w2l + 1 }, () => Array(w1l + 1).fill(0));
+    for (let i = 0; i <= w2l; i++) {
+        for (let j = 0; j <= w1l; j++) {
+            if (i === 0 && j === 0) {
+                matrix[i][j] = 0;
+            } else if (i === 0) {
+                matrix[i][j] = matrix[i][j - 1] + 1;
+            } else if (j === 0) {
+                matrix[i][j] = matrix[i - 1][j] + 1;
+            } else if (text2[i - 1] === text[j - 1]) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                let min = matrix[i - 1][j];
+                min = matrix[i - 1][j - 1] < min ? matrix[i - 1][j - 1] : min;
+                min = matrix[i][j - 1] < min ? matrix[i][j - 1] : min;
+                matrix[i][j] = min + 1;
+            }
         }
-      }
-      matchCounts[currentResult] = matchCount;
     }
-    let mostMatchingResult = null;
-    let maxMatchCount = 0;
-    for (let result in matchCounts) {
-      if (matchCounts[result] > maxMatchCount) {
-        maxMatchCount = matchCounts[result];
-        mostMatchingResult = result;
-      }
+    return matrix[w2l][w1l];
+}
+export function searchFor(text: string, possibleResults: string[]){
+    let results = [];
+    for(const result of possibleResults){
+        results.push({
+            score: calculateSimilarity(text, result),
+            result            
+        })
     }
-    return mostMatchingResult;
+    return results.sort((a, b)=> a.score - b.score);
 }
 export function getPaths(root: string, pathLike: string): string[]{
         const current = [];
@@ -93,10 +104,10 @@ export function hasCodeBlock(str: string, lang = "") {
         const start = str.indexOf(`\`\`\`${lang}`);
         const end = str.indexOf('```', start + lang.length + 3);
         return start !== -1 && end !== -1;
-    }
+}
 export function extractCodeBlock(str: string, lang = "") {
         const start = str.indexOf(`\`\`\`${lang}`);
         const end = str.indexOf('```', start + lang.length + 3);
         if (start === -1 || end === -1) {return null;}
         return str.slice(start + lang.length + 3, end).trim();
-    }
+}
