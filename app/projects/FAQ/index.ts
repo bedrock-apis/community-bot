@@ -28,7 +28,7 @@ CONTENT_LOADERS["faq"] = async function SetContent(v,paths){
             if(object.title) entry.setTitle(object.title);
             if(object.image) entry.setImage(object.image);
             if(object.link) entry.setImage(object.link);
-            if(Array.isArray(object.aliases)) for(const alias of object.aliases) entry.addAliases(alias);
+            if(Array.isArray(object.aliases)) for(const alias of object.aliases) entry.addAliases(alias.toLowerCase());
             FAQ_MANAGER.addFAQ(entry);
         }).catch(e=>null/*console.error(e)*/);
         tasks.push(task);

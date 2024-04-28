@@ -81,9 +81,10 @@ export function calculateSimilarity(text: string, text2: string){
 export function searchFor(text: string, possibleResults: string[]){
     let results = [];
     for(const result of possibleResults){
+        const score = calculateSimilarity(text, result);
         results.push({
-            score: calculateSimilarity(text, result),
-            result            
+            score,
+            result
         })
     }
     return results.sort((a, b)=> a.score - b.score);
