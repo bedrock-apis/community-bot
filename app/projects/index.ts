@@ -8,6 +8,7 @@ import "./FAQ";
 
 // Experimental but Supported for now
 import "./NBT";
+import "./forum";
 //////////////////////// Developed -> please comment these one before pushing changes
 import "./api-types";
 //import "./ts-compiler";

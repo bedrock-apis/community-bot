@@ -10,7 +10,9 @@ export class FAQManager{
     addFAQ(faq: FAQEntry){
         this.entries.set(faq.name, faq);
         this.searchKeys.set(faq.name, faq);
-        for(const alias of faq.aliases) this.searchKeys.set(alias, faq);
+        for(const alias of faq.aliases) {
+            this.searchKeys.set(alias, faq);
+        }
         return this;
     }
     getFAQ(key: string){

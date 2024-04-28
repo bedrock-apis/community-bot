@@ -67,7 +67,7 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
             .addFields({name: "Link", value: entry.link?"[Redirect]("+entry.link+")":"`undefined`", inline: true})
             .addFields({name: "Source File", value: "[Github Source]("+"https://github.com/bedrock-apis/bot-resources/tree/" + BOT_RESOURCES_REPO_ROOT_RAW.split("/").at(-1) + "/" + entry.metaURI+")", inline: true})
             .addFields({name: "Body length", value: "`" + entry.body.length + "`", inline: true})
-            .addFields({
+            if(entry.aliases.length) embed.addFields({
                 name: "Aliases",
                 value: "```properties\n" + entry.aliases.join("\n") + "\n```",
                 inline: false
@@ -124,6 +124,11 @@ client.on("interactionCreate", async e=>{
         if(hint?.length < 2) await e.respond([...FAQ_MANAGER.entries.values()].slice(0,24).map(e=>({value:e.name,name:e.title})));
         else {
             const filtered = new Set();
+            /*console.log(
+                searchFor(
+                    hint.toLocaleLowerCase(), 
+                    [...FAQ_MANAGER.searchKeys.keys()]
+                ));*/
             await e.respond(
                 searchFor(
                     hint.toLocaleLowerCase(), 
