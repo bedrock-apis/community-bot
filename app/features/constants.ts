@@ -10,3 +10,11 @@ export const DEBUG = process.env["DEBUG"]??false;
 export const GUILD_IDS = [
     MAIN_GUILD
 ]
+const colors = {
+    "EMBED_DEFAULT": EMBED_BACKGROUND,
+    "EMBED_ERROR": 0x7f190f,
+    "EMBED_SUCCESS": 0x009900,
+    "EMBED_WARN": 0xbb7700
+};
+type T<S> = {readonly [key in keyof S]: S[key]};
+export const COLORS: T<typeof colors> = colors;
