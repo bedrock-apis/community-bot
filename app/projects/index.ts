@@ -7,6 +7,7 @@ import "./templates";
 import "./FAQ";
 
 // Experimental but Supported for now
+import "./transform";
 import "./NBT";
 import "./forum";
 //////////////////////// Developed -> please comment these one before pushing changes
