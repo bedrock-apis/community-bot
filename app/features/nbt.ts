@@ -13,7 +13,7 @@ export enum NBTTag{
     "TypedList" = 9,
     "Compoud" = 10
 }
-export enum SNBTKinds {
+export enum SNBTNumberKinds {
     "b"=NBTTag.Byte,
     "s"=NBTTag.Int16,
     "i"=NBTTag.Int32,
@@ -119,38 +119,40 @@ class Stream{
         return length;
     }
 }
-class NBTValue<T = any> {
-    value: T;
-    readonly type: NBTTag
-    constructor(type: NBTTag, value: T){
+
+
+export abstract class NBTValue<T = any> {
+    public value: T;
+    public readonly type: NBTTag
+    public constructor(type: NBTTag, value: T){
         this.value = value;
         this.type = type;
     }
-    get byteLength(){return 0;}
-    toSNBT(space?: string, count?: number){return "";}
-    toString(){return this.toSNBT()}
+    public abstract readonly byteLength: number;
+    public abstract toSNBT(space?: string, count?: number): string;
+    public toString(){return this.toSNBT()}
 }
 export class CompoudValue extends NBTValue<{[K: string]: NBTValue}>{
-    constructor(value: {[K: string]: NBTValue}){
+    public constructor(value: {[K: string]: NBTValue}){
         super(NBTTag.Compoud,value??{});
     }
-    get(key: string){return this.value[key];}
-    set(key: string, value: NBTValue){return this.value[key] = value;}
-    has(key: string){return key in this.value;}
-    *keys(){yield * Object.getOwnPropertyNames(this.value);}
-    *values(){ for(const k of Object.getOwnPropertyNames(this.value)) yield this.value[k]; }
-    *entries():Generator<[string, NBTValue<any>]> { for(const k of Object.getOwnPropertyNames(this.value)) yield [k,this.value[k]]; }
-    [Symbol.iterator] = this.entries;
-    forEach(callback: (key: string, value: NBTValue, that: this)=>void){for(const [key,value] of this.entries()) callback(key,value,this);}
-    get byteLength(){
+    public get(key: string){return this.value[key];}
+    public set(key: string, value: NBTValue){return this.value[key] = value;}
+    public has(key: string){return key in this.value;}
+    public *keys(){yield * Object.getOwnPropertyNames(this.value);}
+    public *values(){ for(const k of Object.getOwnPropertyNames(this.value)) yield this.value[k]; }
+    public *entries():Generator<[string, NBTValue<any>]> { for(const k of Object.getOwnPropertyNames(this.value)) yield [k,this.value[k]]; }
+    public [Symbol.iterator] = this.entries;
+    public forEach(callback: (key: string, value: NBTValue, that: this)=>void){for(const [key,value] of this.entries()) callback(key,value,this);}
+    public get byteLength(){
         let a = 0;
         for (const [k,v] of this) {
             a += 1 + 2 + Buffer.from(k,"utf8").byteLength + v.byteLength;
         }
         return a + 1;
     }
-    get size(){return Object.getOwnPropertyNames(this.value).length;}
-    toSNBT(space?: string, count: number = 1): string{
+    public get size(){return Object.getOwnPropertyNames(this.value).length;}
+    public toSNBT(space?: string, count: number = 1): string{
         if(this.size === 0) return "{}";
         if(space) {
             let a = "{";
@@ -166,6 +168,7 @@ export class CompoudValue extends NBTValue<{[K: string]: NBTValue}>{
     }
 }
 export class TypedArrayValue<T> extends NBTValue<NBTValue<T>[]>{
+    public static ArrayRemove(array: any[],index: number,removeNumber = 1){return array.slice(0,index).concat(array.slice(index + removeNumber));}
     readonly arrayType;
     constructor(v: NBTValue<T>[], type: NBTTag){
         super(NBTTag.TypedList, v);
@@ -176,7 +179,7 @@ export class TypedArrayValue<T> extends NBTValue<NBTValue<T>[]>{
         return this;
     }
     remove(index: number){
-        ArrayRemove(this.value,index);
+        TypedArrayValue.ArrayRemove(this.value,index);
     }
     set(index: number, value: NBTValue){
         if(value instanceof NBTValue) return this.value[index] = value;
@@ -207,12 +210,12 @@ export class TypedArrayValue<T> extends NBTValue<NBTValue<T>[]>{
     }
     *[Symbol.iterator](){yield * this.value;}
 }
-class NumericValue<T extends number | bigint = number> extends NBTValue<T>{
+export class NumericValue<T extends number | bigint = number> extends NBTValue<T>{
     constructor(type: NBTTag, value: T){
         super(type,value);
     }
     valueOf(){return Number(this.value);}
-    get numberType(){return SNBTKinds[this.type];}
+    get numberType(){return SNBTNumberKinds[this.type];}
     get byteLength(){return NUMBER_SIZES[this.type as 1];}
     toSNBT(){return "" + this.value + this.numberType;}
 }
@@ -238,18 +241,27 @@ export class Int32Value extends NumericValue{ constructor(v: number){super(NBTTa
 export class Int64Value extends NumericValue<bigint>{ constructor(v: bigint){super(NBTTag.Int64,v)}; }
 export class FloatValue extends NumericValue{ constructor(v: number){super(NBTTag.Float,v)}; }
 export class DoubleValue extends NumericValue{ constructor(v: number){super(NBTTag.Double,v)}; }
-function ArrayRemove(array: any[],index: number,removeNumber = 1){return array.slice(0,index).concat(array.slice(index + removeNumber));}
+export class Root<T extends NBTValue<any>> extends NBTValue<T>{
+    public root: string;
+    public constructor(value: T, root: string = ""){
+        super(value.type, value);
+        this.root = root;
+    }
+    public get byteLength(){return new StringValue(this.root).byteLength + this.value.byteLength;}
+    public toSNBT(space?: string, count?: number){return `${new StringValue(this.root).toSNBT()}: ${this.value.toSNBT(space, count)}`;}
+}
+
 export class NBTFile{
 
     /**@private */
     private value;
     /**@private */
     private header;
-    name;
+    public name: string;
     constructor(value: NBTValue, name: string = "", hasHeader: number = 0){
         this.value = value;
-        this.name = name;
         this.header = hasHeader;
+        this.name = name;
     }
     setHeader(version: number = 0){
         this.header = version;
@@ -260,8 +272,13 @@ export class NBTFile{
     /**@readonly */
     get headerVersion(){return this.header;}
     /**@readonly */
-    get byteLength(){return (this.header?8:0) + 3 + Buffer.from(this.name,"utf8").byteLength + this.value.byteLength;}
-    toSNBT(space = ""){return this.value.toSNBT(space)}
+    get byteLength(){return (this.header?8:0) + 3 + this.value.byteLength;}
+    toSNBT(space = ""){
+        return `${new StringValue(this.name).toSNBT()}: ${this.value.toSNBT(space)}`
+    }
+    static ToSNBT(tag: NBTFile | NBTValue<any>, space = ""){
+        return tag.toSNBT(space);
+    }
     toString(){return this.toSNBT()}
     static Read(buffer: Buffer){
         const headerVersion = NBTFile.GetHeaderVersion(buffer);
@@ -270,31 +287,39 @@ export class NBTFile{
         const fileName = Raw_NBT_Readers[NBTTag.String](stream);
         return new NBTFile(NBT_Readers[type as 1](stream) as any,fileName,headerVersion);
     }
-    /**@returns {any} @param {Buffer} buffer*/
-    static ReadRaw(buffer: Buffer){
-        const headerVersion = NBTFile.GetHeaderVersion(buffer);
-        const stream = new Stream(buffer,headerVersion?8:0);
+    static ReadNoRoot(buffer: Buffer){
+        const stream = new Stream(buffer,0);
         const type = stream.readByte();
-        const skip = stream.readInt16LE();
-        stream.offset += skip;
-        return Raw_NBT_Readers[type as 1](stream);
+        return NBT_Readers[type as 1](stream) as NBTValue;
     }
     /**@returns {Buffer} @param {NBTFile} file @param {Buffer |undefined} buffer */
-    static TagFromSNBT(string: string){
-        return SNBT.read(string);
+    static ReadAsSNBT(string: string){
+        const source = new Source(string);
+        const tag = SNBT.read(source);
+        if(tag instanceof Root){
+            return new NBTFile(tag.value, tag.root, 0);
+        }
+        return tag;
     }
-    static Write(file: NBTFile, buffer?: Buffer){
-        const byteSize = file.byteLength; 
+    static Write(file: NBTFile | NBTValue, buffer?: Buffer){
+        const byteSize = file.byteLength;
+        console.log("byte-length: " + byteSize);
         buffer = buffer??Buffer.alloc(byteSize);
         if(buffer.byteLength < byteSize) throw new RangeError("Buffer size is not low, can't not save this NBTFile");
-        if(file.hasHeader){
-            buffer.writeInt16LE(file.headerVersion,0);
-            buffer.writeInt16LE(byteSize - 8,4);
+        if(file instanceof NBTFile){
+            if(file.hasHeader){
+                buffer.writeInt16LE(file.headerVersion,0);
+                buffer.writeInt16LE(byteSize - 8,4);
+            }
+            const stream = new Stream(buffer,file.hasHeader?8:0);
+            stream.writeByte(file.value.type);
+            NBT_Writers[NBTTag.String](stream,{value:file.name??""} as StringValue);
+            NBT_Writers[file.value.type as 1](stream, file.value as any);
+        }else{
+            const stream = new Stream(buffer,0);
+            stream.writeByte(file.value.type);
+            NBT_Writers[file.value.type as 1](stream, file.value as any);
         }
-        const stream = new Stream(buffer,file.hasHeader?8:0);
-        stream.writeByte(file.value.type);
-        NBT_Writers[NBTTag.String](stream,{value:file.name??""} as StringValue);
-        NBT_Writers[file.value.type as 1](stream, file.value as any);
         return buffer;
     }
     static WriteTag(tag: NBTValue<any>, buffer?: Buffer){
@@ -305,6 +330,16 @@ export class NBTFile{
         const stream = new Stream(buffer,0);
         stream.writeByte(tag.type);
         NBT_Writers[NBTTag.String](stream,{value:""} as StringValue);
+        NBT_Writers[tag.type as 1](stream, tag as any);
+        return buffer;
+    }
+    static WriteTagNoRoot(tag: NBTValue<any>, buffer?: Buffer){
+        const byteSize = tag.byteLength; 
+        buffer = buffer??Buffer.alloc(byteSize + 3);
+        if(buffer.byteLength < byteSize) throw new RangeError("Buffer size is not low, can't not save this NBTFile");
+
+        const stream = new Stream(buffer,0);
+        stream.writeByte(tag.type);
         NBT_Writers[tag.type as 1](stream, tag as any);
         return buffer;
     }
@@ -465,7 +500,8 @@ namespace SNBT{
         "string": readString,
         "compoud": readCompoud,
         "array": readArray,
-        "number": readNumber
+        "number": readNumber,
+        "root": readRoot
     }
     const numberChars = "0123456789";
     const noWhiteSpace = /[A-Za-z\-\_\d]+/g;
@@ -483,8 +519,16 @@ namespace SNBT{
         if(mainChar === '"') return "string";
         else if(mainChar === "{") return "compoud";
         else if(mainChar === "[") return "array";
+        else if(mainChar === ":") return "root";
         else if("0123456789-".includes(mainChar)) return "number";
         else return mainChar;
+    }
+    function readRoot(source: Source){
+        readWhiteSpace(source);
+        if(source.read() !== ':') throw new TypeError("Is not a root kind");
+        const kind = readSNBTType(source);
+        if(!(kind in kinds)) throw new SyntaxError("Unexpected: " + source.read());
+        return new Root(kinds[kind as "string"](source) as NBTValue);
     }
     function readString(source: Source){
         let string = [];
@@ -612,16 +656,26 @@ namespace SNBT{
         }
         throw new ReferenceError("Unexpected end of input");
     }
-    function readWhiteSpace(source: Source, char = source.peek()){
+    export function readWhiteSpace(source: Source, char = source.peek()){
         let i = 0;
         while(whiteSpace.includes(char)) source.offset++, char = source.peek();
         return i;
     }
-    export function read(string: string){
-        const source = new Source(string);
+    export function read(string: string | Source){
+        const source = string instanceof Source ? string : new Source(string);
         readWhiteSpace(source);
         const kind = readSNBTType(source);
         if(!(kind in kinds)) throw new SyntaxError("Unexpected: " + source.read());
+        if(kind === "string") {
+            let root = kinds[kind](source);
+            try {
+                const tag = kinds.root(source);
+                tag.root = root.value;
+                return tag;
+            } catch (error) {
+                return root;
+            }
+        }
         return kinds[kind as "string"](source) as NBTValue;
     }
 }
