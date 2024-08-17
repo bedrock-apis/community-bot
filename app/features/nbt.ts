@@ -618,6 +618,7 @@ namespace SNBT{
             else key = readSourceName(source);
             char = source.read();
             if(readWhiteSpace(source,char)) char = source.peek();
+            if(char === '}') return obj;
             if(char !== ":") throw new TypeError("Unexpected: " + char);
             if(readWhiteSpace(source)) char = source.peek();
             const kind = readSNBTType(source);
@@ -644,6 +645,7 @@ namespace SNBT{
                 readWhiteSpace(source); 
                 char = source.read();
             }
+            if(char === ']') return new TypedArrayValue(obj, initialKind??NBTTag.Byte);
             source.offset--;
             const kind = readSNBTType(source);
             if(!(kind in kinds)) throw new TypeError("Unexpected kind: " + kind);
