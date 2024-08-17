@@ -302,8 +302,8 @@ export class NBTFile{
         return tag;
     }
     static Write(file: NBTFile | NBTValue, buffer?: Buffer){
+        console.log(file);
         const byteSize = file.byteLength;
-        console.log("byte-length: " + byteSize);
         buffer = buffer??Buffer.alloc(byteSize);
         if(buffer.byteLength < byteSize) throw new RangeError("Buffer size is not low, can't not save this NBTFile");
         if(file instanceof NBTFile){
@@ -317,8 +317,8 @@ export class NBTFile{
             NBT_Writers[file.value.type as 1](stream, file.value as any);
         }else{
             const stream = new Stream(buffer,0);
-            stream.writeByte(file.value.type);
-            NBT_Writers[file.value.type as 1](stream, file.value as any);
+            stream.writeByte(file.type);
+            NBT_Writers[file.type as 8](stream, file.value);
         }
         return buffer;
     }
@@ -672,7 +672,8 @@ namespace SNBT{
                 const tag = kinds.root(source);
                 tag.root = root.value;
                 return tag;
-            } catch (error) {
+            } catch (error: any) {
+                console.log("String fallback", error, error.stack);
                 return root;
             }
         }
