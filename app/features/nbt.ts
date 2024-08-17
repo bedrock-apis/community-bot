@@ -302,7 +302,6 @@ export class NBTFile{
         return tag;
     }
     static Write(file: NBTFile | NBTValue, buffer?: Buffer){
-        console.log(file);
         const byteSize = file.byteLength;
         buffer = buffer??Buffer.alloc(byteSize);
         if(buffer.byteLength < byteSize) throw new RangeError("Buffer size is not low, can't not save this NBTFile");
