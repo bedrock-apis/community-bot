@@ -106,7 +106,7 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
     async [COMMAND_OPTIONS.TO_BASE64](interaction){
         const textBase64 = interaction.options.getString("data");
         if(textBase64){
-            const file = NBTFile.ReadAsSNBT(textBase64);
+            const file = NBTFile.ReadAsSNBT(textBase64.replaceAll(/[”“]/g,'"'));
             return interaction.reply({
                 embeds:[
                     {
