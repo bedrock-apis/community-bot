@@ -38,6 +38,7 @@ client.registryCommand(
                 embeds: [new EmbedBuilder().setColor(COLORS.EMBED_ERROR).setTitle(`Unknow subcommand name: ` + interaction.options.getSubcommand())]
             });
         } catch (error: any) {
+            console.error(error, error.stack);
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(COLORS.EMBED_ERROR).setTitle("Something went wrong").setDescription("```\n" + error.message +  "\n```")]
             });
@@ -88,7 +89,8 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
     async [COMMAND_OPTIONS.FROM_BASE64](interaction){
         const textBase64 = interaction.options.getString("data");
         if(textBase64){
-            const file = NBTFile.Read(Buffer.from(textBase64, "base64"));
+            let file = TRY(()=>NBTFile.Read(Buffer.from(textBase64, "base64")));
+            if(!file)  file = NBTFile.ReadNoRoot(Buffer.from(textBase64, "base64"));
             return interaction.reply({
                 embeds:[
                     {
@@ -122,3 +124,8 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
         });
     }
 }
+const TRY = (n: Function)=>{try {
+    return n();
+} catch (error) {
+  return null;  
+}}

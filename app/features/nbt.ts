@@ -272,7 +272,7 @@ export class NBTFile{
     /**@readonly */
     get headerVersion(){return this.header;}
     /**@readonly */
-    get byteLength(){return (this.header?8:0) + 3 + this.value.byteLength;}
+    get byteLength(){return (this.header?8:0) + new StringValue(this.name).byteLength + this.value.byteLength;}
     toSNBT(space = ""){
         return `${new StringValue(this.name).toSNBT()}: ${this.value.toSNBT(space)}`
     }
@@ -302,9 +302,8 @@ export class NBTFile{
         return tag;
     }
     static Write(file: NBTFile | NBTValue, buffer?: Buffer){
-        console.log(file);
         const byteSize = file.byteLength;
-        buffer = buffer??Buffer.alloc(byteSize);
+        buffer = buffer??Buffer.alloc(byteSize + 1);
         if(buffer.byteLength < byteSize) throw new RangeError("Buffer size is not low, can't not save this NBTFile");
         if(file instanceof NBTFile){
             if(file.hasHeader){
@@ -318,7 +317,7 @@ export class NBTFile{
         }else{
             const stream = new Stream(buffer,0);
             stream.writeByte(file.type);
-            NBT_Writers[file.type as 8](stream, file.value);
+            NBT_Writers[file.type as 8](stream, file as StringValue);
         }
         return buffer;
     }
