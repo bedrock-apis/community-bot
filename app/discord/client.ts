@@ -1,6 +1,6 @@
-import { BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, Embed, EmbedBuilder, GatewayIntentBits, Interaction, MessageCreateOptions, MessagePayload, SlashCommandBuilder} from "discord.js";
+import { ActivityType, BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, Embed, EmbedBuilder, GatewayIntentBits, Interaction, MessageCreateOptions, MessagePayload, SlashCommandBuilder} from "discord.js";
 import { EMBED_BACKGROUND, MAIN_CHANNEL_ID, MAIN_GUILD, PublicEvent, TriggerEvent } from "../features";
-
+import activities from "./activities";
 export class Client extends CL<true>{
     isReloading?: Promise<void>;
     get readyState(){ return this.isReloading == null && this.isReady();}
@@ -25,6 +25,7 @@ export class Client extends CL<true>{
         console.log("[Client] Logged in as ", this.user.displayName);
         await this.reload();
         await this.LoadCommands();
+        setInterval(()=>this.pickPresence(), 600*1000);
         const stats = await Promise.all(TriggerEvent(this.onStats));
         this.sendInfo({
             embeds: [
@@ -35,6 +36,10 @@ export class Client extends CL<true>{
             ]
         })
         setInterval(()=>this.reload(), 30 * 60 * 1000);
+    }
+    async pickPresence(){
+        //@ts-ignore
+        this.user.setPresence(activities[Math.floor(Math.random() * activities.length)]);
     }
     async LoadCommands(){
         //@ts-ignore
