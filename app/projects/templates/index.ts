@@ -67,8 +67,8 @@ const registryCommand = ()=>
         p.setName("template-id").setRequired(true).setDescription("Id of template what you want to generate")
         return p;
     })
-    .setName("template").setDescription("Generate's template"),
-    onInteraction
+    .setName("template").setDescription("Generate's template") as any,
+    onInteraction as any
 );
 class Template{
     readonly paths;

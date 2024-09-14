@@ -1,8 +1,9 @@
-import { CacheType, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
+import { ApplicationCommandType, CacheType, ChatInputCommandInteraction, ContextMenuCommandBuilder, EmbedBuilder, InteractionContextType, Message, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { client } from "../../discord";
-import { BOT_RESOURCES_REPO_ROOT_RAW, EMBED_BACKGROUND, searchFor } from "../../features";
+import { BOT_RESOURCES_REPO_ROOT_RAW, COLORS, EMBED_BACKGROUND, searchFor } from "../../features";
 import { Context} from "../project-loader";
 import { FAQ_MANAGER, FAQEntry, FAQManager } from "./manager";
+import * as JSON from "comment-json";
 
 client.registryCommand(
     new SlashCommandBuilder()
@@ -10,12 +11,13 @@ client.registryCommand(
         new SlashCommandSubcommandBuilder().setName("get").setDescription("Gets specific FAQ information")
             .addStringOption(p=>p.setName("faq-id").setRequired(true).setDescription("faq key").setAutocomplete(true))
     )
+    /*
     .addSubcommand(
         new SlashCommandSubcommandBuilder().setName("build").setDescription("builds the visualizable fqa from escaped text")
         .addStringOption(e=>e.setName("content").setDescription("escaped description data").setRequired(true))
         .addStringOption(e=>e.setName("title").setDescription("title data"))
         .addStringOption(e=>e.setName("image-link").setDescription("image-data"))
-    )
+    )*/
     .addSubcommand(
         new SlashCommandSubcommandBuilder().setName("info").setDescription("Gets specific FAQ information")
         .addStringOption(p=>p.setName("faq-id").setRequired(true).setDescription("faq key").setAutocomplete(true))
@@ -23,7 +25,7 @@ client.registryCommand(
     .setName("faq").setDescription("FAQ"),
     async (client, commandName, interaction)=>{
         const subcommand = interaction.options.getSubcommand();
-        if(subcommand in commandOptions) await commandOptions[subcommand as any](interaction)
+        if(subcommand in commandOptions) await commandOptions[subcommand as any](interaction as any)
         else await interaction.reply({
             ephemeral: true,
             embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Unknow subcommand name: ` + interaction.options.getSubcommand())]
@@ -87,35 +89,6 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
                 ]
             });
         }
-    },
-    async "build"(interaction){
-        try {
-            const data = interaction.options.getString("content");
-            const content = JSON.parse(`"${data}"`);
-            const entry = new FAQEntry();
-            entry.name = "<your-name-here>";
-            entry.title = interaction.options.getString("title")??"Title";
-            entry.body = content;
-            entry.image = interaction.options.getString("image-link")??undefined;
-            const embed = FAQManager.BuildEmbed(entry, Context.FromInteraction(interaction));
-            let code = entry.toYaml();
-            let text = "- Yaml\n```yaml\n";
-            if(code.includes("```")) text = ":warning:  **Warning** - Code blocks in description are encoded but they are works like regular \\`\\`\\` \n" + text;
-            text += (code = code.replaceAll("```","%60%60%60"));
-            text += "\n```\n- Preview"
-            await interaction.reply({
-                content:text,
-                embeds:[
-                    embed
-                ]
-            });
-        } catch (error) {
-            return await interaction.reply({
-                embeds:[
-                    new EmbedBuilder().setTitle("Faild to build a FQA").setColor(EMBED_BACKGROUND | 0x100000)
-                ]
-            });
-        }
     }
 }
 client.on("interactionCreate", async e=>{
@@ -143,4 +116,80 @@ client.on("interactionCreate", async e=>{
             )
         }
     }
+});
+
+async function build(interaction: any, definition: string, content: string){
+    try {
+        const warnings = [];
+        const {
+            title = "Empty Title",
+            image = undefined,
+            name = undefined,
+            color = COLORS.EMBED_DEFAULT
+        } = JSON.parse(definition) as any;
+        const entry = new FAQEntry();
+        entry.name = "<your-name-here>";
+        entry.title = title;
+        entry.body = content;
+        entry.image = image;
+        entry.color = color;
+        const embed = FAQManager.BuildEmbed(entry, Context.FromInteraction(interaction));
+        let code = entry.toYaml();
+        let text = "- Yaml\n```yaml\n";
+        if(code.includes("```")) text = ":warning:  **Warning** - Code blocks in description are encoded but they are works like regular \\`\\`\\` \n" + text;
+        text += (code = code.replaceAll("```","%60%60%60"));
+        text += "\n```\n- Preview"
+        const embeds = [embed];
+        if(warnings.length) {
+            // embeds push warnings
+        }
+        await interaction.reply({
+            //content:text,
+            embeds
+        });
+    } catch (error: any) {
+        console.log(error, error.stack);
+        return await interaction.reply({
+            embeds:[
+                new EmbedBuilder().setTitle("Faild to build a FQA").setColor(EMBED_BACKGROUND | 0x100000).setDescription("```\n"+ error +"\n```")
+            ]
+        });
+    }
+}
+const errorEmbedMessage = `
+Expected at least two lines, first line is for json definitions of FAQ, and has to end with \`;\`.
+\`\`\`properties
+{...};
+My faq content
+\`\`\`
+Here is example of definitions
+\`\`\`json
+{"title":"title", "image":"ref=https://...", "color":"#ffffff"}
+\`\`\`
+each definition entry is optional so empty JSON object definition is allowed
+`;
+client.registryCommand(new ContextMenuCommandBuilder().setType(ApplicationCommandType.Message).setName("faq-preview"), async (client, cmd, interaction)=>{
+    const message = (interaction as any).targetMessage as Message;
+    const lines = message.content.split(/\;\n/g);
+    if(lines.length <= 1) {
+        await interaction.reply({
+            embeds:[
+                new EmbedBuilder().setColor(COLORS.EMBED_ERROR).setTitle("Faild to build FAQ")
+                .setDescription(errorEmbedMessage)
+            ]
+        })
+        return;
+    }
+    const [firstLine] = lines;
+    const contentData = message.content.substring(firstLine.length + 2);
+    await build(interaction, firstLine, contentData).catch(async (error)=>{
+        await interaction.reply({
+            embeds:[
+                new EmbedBuilder().setColor(COLORS.EMBED_ERROR).setTitle("Faild to build FAQ")
+                .setDescription(errorEmbedMessage),
+                new EmbedBuilder().setColor(COLORS.EMBED_ERROR).setTitle("Error Message")
+                .setDescription('````\n' + error + '\n```')
+            ]
+        })
+    });
 });

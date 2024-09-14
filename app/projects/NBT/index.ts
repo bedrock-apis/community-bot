@@ -33,7 +33,7 @@ client.registryCommand(
     async (client, commandName, interaction)=>{
         const subcommand = interaction.options.getSubcommand();
         try {
-            if(subcommand in commandOptions) await commandOptions[subcommand as any](interaction);
+            if(subcommand in commandOptions) await commandOptions[subcommand as any](interaction as any);
             else await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(COLORS.EMBED_ERROR).setTitle(`Unknow subcommand name: ` + interaction.options.getSubcommand())]
             });

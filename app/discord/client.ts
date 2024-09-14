@@ -1,6 +1,6 @@
-import { BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputCommandInteraction, CommandInteraction, ContextMenuCommandBuilder, ContextMenuCommandInteraction, Embed, EmbedBuilder, GatewayIntentBits, Interaction, MessageCreateOptions, MessagePayload, SlashCommandBuilder} from "discord.js";
+import { ActivityType, BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputApplicationCommandData, ChatInputCommandInteraction, CommandInteraction, CommandInteractionOptionResolver, ContextMenuCommandBuilder, ContextMenuCommandInteraction, Embed, EmbedBuilder, GatewayIntentBits, Interaction, MessageApplicationCommandData, MessageCreateOptions, MessagePayload, SlashCommandBuilder, SlashCommandSubcommandBuilder, ToAPIApplicationCommandOptions} from "discord.js";
 import { EMBED_BACKGROUND, MAIN_CHANNEL_ID, MAIN_GUILD, PublicEvent, TriggerEvent } from "../features";
-
+import activities from "./activities";
 export class Client extends CL<true>{
     isReloading?: Promise<void>;
     get readyState(){ return this.isReloading == null && this.isReady();}
@@ -10,6 +10,7 @@ export class Client extends CL<true>{
     readonly onReload = new PublicEvent<[]>;
     readonly onButtonPress = new PublicEvent<[string,ButtonInteraction]>;
     readonly onStats = new PublicEvent<[]>;
+    readonly _debufDefinitions = new Map<string, [any, any]>();
     //readonly onCommandInteractionEvent = new PublicEvent<[]>
     constructor(){
         super({
@@ -21,10 +22,17 @@ export class Client extends CL<true>{
         this.onStats.subscribe(()=>`available-guild-commands: ${this._guildCommandDefinitions.size}`);
         this.onStats.subscribe(()=>`guild-count: ${this.guilds.cache.size}`);
     }
+    public addDebugCommand(
+        definition: SlashCommandSubcommandBuilder | ((subcommandGroup: SlashCommandSubcommandBuilder) => SlashCommandSubcommandBuilder),
+        handler: (client: this, commandname: string, interaction: Omit<ChatInputCommandInteraction,"options"> & ({options:CommandInteractionOptionResolver<CacheType>}))=>PromiseLike<any>){
+            this._debufDefinitions.set(definition.name, [definition, handler]);
+    }
     protected async onReady(){
         console.log("[Client] Logged in as ", this.user.displayName);
         await this.reload();
         await this.LoadCommands();
+        this.pickPresence();
+        setInterval(()=>this.pickPresence(), 600*1000);
         const stats = await Promise.all(TriggerEvent(this.onStats));
         this.sendInfo({
             embeds: [
@@ -36,16 +44,36 @@ export class Client extends CL<true>{
         })
         setInterval(()=>this.reload(), 30 * 60 * 1000);
     }
-    async LoadCommands(){
+    async pickPresence(){
         //@ts-ignore
-        this.application.commands.set([...this._commandDefinitions.values()]);
-        console.log("[Client][Commands][Registry]", this._commandDefinitions.size,"commands were successfully registered");
-        this.guilds.cache.forEach(e=>{
-            const commands = Array.from(this._guildCommandDefinitions.values()).filter(d=>d.scopes.includes(e.id)).map(e=>e.definition);
-            
+        this.user.setPresence(activities[Math.floor(Math.random() * activities.length)]);
+    }
+    async LoadCommands(){
+        try {
+            const debug = new SlashCommandBuilder().setName("debug").setDescription("Some cool things");
+            for(const [k,v] of this._debufDefinitions) debug.addSubcommand(v[0]);
+            this.registryCommand(debug,
+                (client, commandName, interaction)=>{
+                    const subcommand = interaction.options.getSubcommand();
+                    client._debufDefinitions.get(subcommand)?.[1]?.(client, subcommand, interaction);
+                }
+            )
+        } catch (error) {
+            console.error(error);
+        }
+        try {
             //@ts-ignore
-            if(commands.length) e.commands.set(commands);
-        })
+            this.application.commands.set([...this._commandDefinitions.values()]);
+            console.log("[Client][Commands][Registry]", this._commandDefinitions.size,"commands were successfully registered");
+            this.guilds.cache.forEach(e=>{
+                const commands = Array.from(this._guildCommandDefinitions.values()).filter(d=>d.scopes.includes(e.id)).map(e=>e.definition);
+                
+                //@ts-ignore
+                if(commands.length) e.commands.set(commands);
+            })
+        } catch (error) {
+            console.error(error);
+        }
     }
     protected async onInteraction(interaction: Interaction){
         try {
@@ -81,10 +109,9 @@ export class Client extends CL<true>{
             return token??"";
         } while (true);
     }
-    //@ts-ignore
-    registryCommand(commandDefinition: ContextMenuCommandBuilder, handler: (n: this,commandname: string, interaction: ContextMenuCommandInteraction<CacheType>)=>void, scope?: string[] | null): this
-    registryCommand(commandDefinition: Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">, handler: (n: this,commandname: string, interaction: ChatInputCommandInteraction<CacheType>)=>void, scope?: string[] | null): this
-    registryCommand(commandDefinition: BaseApplicationCommandData, handler: (n: this,commandname: string, interaction: CommandInteraction<CacheType>)=>void, scope: string[] | null = null)
+    //public registryCommand(commandDefinition: MessageApplicationCommandData, handler: (n: this,commandname: string, interaction: ContextMenuCommandInteraction<CacheType>)=>void, scope?: string[] | null): this
+    //public registryCommand(commandDefinition: ChatInputApplicationCommandData, handler: (n: this,commandname: string, interaction: ChatInputCommandInteraction<CacheType>)=>void, scope?: string[] | null): this
+    public registryCommand(commandDefinition: BaseApplicationCommandData, handler: (n: this,commandname: string, interaction: Omit<ChatInputCommandInteraction,"options"> & ({options:CommandInteractionOptionResolver<CacheType>}))=>void, scope: string[] | null = null)
     {
         const commandName = commandDefinition.name;
         if(scope) {

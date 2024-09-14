@@ -2,6 +2,7 @@ import { BOT_RESOURCES_REPO_ROOT_RAW, GetGithubContent, getPaths } from "../../f
 import { CONTENT_LOADERS, PRE_LOAD } from "../project-loader";
 import { FAQ_MANAGER, FAQEntry } from "./manager";
 import { parse} from "yaml";
+import * as JSON from "comment-json";
 import { client } from "../../discord";
 
 import "./commands";
@@ -22,6 +23,11 @@ CONTENT_LOADERS["faq"] = async function SetContent(v,paths){
             const entry = new FAQEntry();
             const raw_text = e.toString().replaceAll("%60%60%60","```");
             const object = faq_file.endsWith(".json")?JSON.parse(raw_text):parse(raw_text);
+            if(!object.name) object.name = object.tags?.[0];
+            if(typeof object.name != "string") {
+                console.error("FAQ no name: " + faq_file);
+                return;
+            }
             entry.setName(object.name.toLowerCase());
             entry.setBody(object.body);
             entry.setMetaURI([...link.slice(pathLength)].join("/"));

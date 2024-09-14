@@ -1,12 +1,13 @@
 import { BOT_RESOURCES_REPO_ROOT_RAW, GITHUB_NOT_FOUND_MESSAGE, PublicEvent, SafeDownloadContent, TriggerEvent, getPaths } from "../../features";
 import { LoadAll } from "./main_variables";
+import {parse} from "comment-json";
 
 export async function loadJob(){
     const taskBariableLoad = LoadAll();
     const preTask = TriggerEvent(PRE_LOAD);
     const baseContents = await SafeDownloadContent(BOT_RESOURCES_REPO_ROOT_RAW + "/contents.json");
     if(baseContents.error || baseContents.data?.toString?.() === GITHUB_NOT_FOUND_MESSAGE) throw baseContents.error??GITHUB_NOT_FOUND_MESSAGE;
-    const contents = JSON.parse(baseContents.data?.toString("utf-8")??"") as string[];
+    const contents = parse(baseContents.data?.toString("utf-8")??"") as string[];
     let tasks = [] as any[];
     let paths = [];
     for (let locationPath of contents) {
@@ -22,7 +23,7 @@ export async function loadJob(){
         if(error || data?.toString?.() === GITHUB_NOT_FOUND_MESSAGE) continue;
         try {
             const text = data?.toString()??"";
-            const sources = JSON.parse(text);
+            const sources = parse(text) as any;
             const newTask = ContentLoader(sources, paths.shift()??[], text).catch(e=>console.log("Failed to run loader for: " + sources.type));
             tasks.push(newTask.then(()=>i++).catch(e=>console.error(e.message)));
         } catch (error) { continue; }

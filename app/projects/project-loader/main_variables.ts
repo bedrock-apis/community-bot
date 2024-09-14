@@ -2,7 +2,7 @@ import { BDS_VERSIONS_GIT_FILE, GetGithubContent, uuidv4 } from "../../features"
 import { Package } from "../../features/npm";
 import { NATIVE_MODULE_NAMES, NPM_MODULES } from "../constants/modules";
 import { DynamicVariables } from "./variables-manager";
-
+import * as JSON from "comment-json";
 const versions = [
     "stable",
     "preview"
@@ -20,7 +20,7 @@ export async function LoadAll(){
 async function bdsDynamicVariables() {
     const file = await GetGithubContent(BDS_VERSIONS_GIT_FILE);
     if(file){
-        const parse = JSON.parse(file.toString());
+        const parse = JSON.parse(file.toString()) as any;
         for (const v of versions) {
             const version = parse?.windows?.[v];
             const engine = getEngine(version);
