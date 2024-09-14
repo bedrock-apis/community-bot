@@ -8,17 +8,17 @@ const packages: {[k: string]: string} = {};
 NPM_MODULES.forEach(e=>packages[e] = "@minecraft/" + e);
 client.registryCommand(
     new SlashCommandBuilder().addSubcommand(
-        new SlashCommandSubcommandBuilder().setName("get").setDescription("Gets package information")
+        new SlashCommandSubcommandBuilder().setName("about").setDescription("Gets package information")
             .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
             .addBooleanOption(n=>n.setName("latest-beta").setDescription("If true, it returns the latest beta version, if not, it returns the latest stable."))
     ).addSubcommand(
-        new SlashCommandSubcommandBuilder().setName("info").setDescription("Gets the package information")
+        new SlashCommandSubcommandBuilder().setName("details").setDescription("Gets the package information")
         .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
     ).addSubcommand(
-        new SlashCommandSubcommandBuilder().setName("current").setDescription("Gets the list of current versions for specified package")
+        new SlashCommandSubcommandBuilder().setName("versions").setDescription("Gets the list of current versions for specified package")
         .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
     ).addSubcommand(
-        new SlashCommandSubcommandBuilder().setName("versions").setDescription("Gets the list of package versions")
+        new SlashCommandSubcommandBuilder().setName("versions-list").setDescription("Gets the list of package versions")
         .addStringOption(p=>p.setChoices(...choices).setName("package-id").setRequired(true).setDescription("Package name"))
     )
     .setName("package").setDescription("Package APIs"),
@@ -31,7 +31,7 @@ client.registryCommand(
     }
 );
 const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<CacheType>)=>void} = {
-    async "get"(interaction){
+    async "about"(interaction){
         const useBeta = interaction.options.getBoolean("latest-beta");
         const info1 = await Package.Load(packages[interaction.options.getString("package-id") as any]);
         if(useBeta){
@@ -55,19 +55,19 @@ const commandOptions: {[K: string]: (interaction: ChatInputCommandInteraction<Ca
             });
         }
     },
-    async "info"(interaction){
+    async "details"(interaction){
         const pack = await Package.Load(packages[interaction.options.getString("package-id") as any]);
         await interaction.reply({
             embeds: [getPackageInfoEmbed(pack)]
         });
     },
-    async "current"(interaction){
+    async "versions"(interaction){
         const pack = await Package.Load(packages[interaction.options.getString("package-id") as any]);
         await interaction.reply({
             embeds: [getPackageVersionListInfoEmbed(pack)]
         });
     },
-    async "versions"(interaction){
+    async "versions-list"(interaction){
         const pack = await Package.Load(packages[interaction.options.getString("package-id") as any]);
         await interaction.reply({
             embeds: [getAllPackageVersions(pack)]
