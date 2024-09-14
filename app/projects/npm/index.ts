@@ -24,7 +24,7 @@ client.registryCommand(
     .setName("package").setDescription("Package APIs"),
     async (client, commandName, interaction)=>{
         const subcommand = interaction.options.getSubcommand();
-        if(subcommand in commandOptions) await commandOptions[subcommand as any](interaction)
+        if(subcommand in commandOptions) await commandOptions[subcommand as any](interaction as any)
         else await interaction.reply({
             embeds: [new EmbedBuilder().setColor(0x2b2d31).setTitle(`Unknow subcommand name: ` + interaction.options.getSubcommand())]
         });

@@ -15,7 +15,7 @@ client.registryCommand(BUILDER,
     async (client, commandName, interaction)=>{
         const subcommandName = interaction.options.getSubcommand();
         console.log("HELLO: " + subcommandName);
-        await SUB_COMMANDS[subcommandName].handler(client, commandName, interaction);
+        await SUB_COMMANDS[subcommandName].handler(client, commandName, interaction as any);
     }
 );
 

@@ -1,7 +1,7 @@
 import { EmbedBuilder } from "discord.js";
 import { Context, resolveVariables, RESOURCES } from "../project-loader";
 import { stringify } from "yaml";
-import { EMBED_BACKGROUND } from "../../features";
+import { COLORS, EMBED_BACKGROUND } from "../../features";
 
 export class FAQManager{
     public readonly entries = new Map<string, FAQEntry>();
@@ -25,16 +25,25 @@ export class FAQManager{
         this.entries.clear();
         this.searchKeys.clear();
     }
-    static BuildEmbed(faq: FAQEntry, context: Context){
+    static BuildEmbed(faq: FAQEntry, context: Context, warnings: string[] = []){
         const embed = new EmbedBuilder().setColor(EMBED_BACKGROUND).setTitle("FQA - Title").setTimestamp(new Date());
         if(faq.title) embed.setTitle(resolveVariables(faq.title,context));
         if(faq.body) embed.setDescription(resolveVariables(faq.body,context));
         if(faq.link) embed.setURL(faq.link);
         if(faq.image) { 
-            let link = faq.image.startsWith("ref=")?faq.image.substring(4):RESOURCES.IMAGES[faq.image];
+            let link = this.RefPossible(faq.image, RESOURCES.IMAGES);
             if(link) embed.setImage(link)
+            else warnings.push("No such a registred image: " + faq.image);
         }
+        embed.setColor(faq.color??COLORS.EMBED_DEFAULT);
         return embed;
+    }
+    static RefPossible(text: string, getter: any){
+        if(text.startsWith("ref=")){
+            text = text.substring(4);
+            if(!text.startsWith("http")) return "https:" + text;
+            return text;
+        }else return getter[text];
     }
 }
 export class FAQEntry{
@@ -45,6 +54,7 @@ export class FAQEntry{
     body: string;
     aliases: string[] = [];
     metaURI?: string;
+    color = COLORS.EMBED_DEFAULT
     get title(){return this._title??this.name;}
     set title(v){this._title = v;}
     constructor(){

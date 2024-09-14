@@ -1,6 +1,7 @@
 import { SafeDownloadContent } from "../../features";
 import { BDS_DOCS_REPO } from "../constants";
 import { PRE_LOAD, RESOURCES } from "../project-loader";
+import * as JSON from "comment-json";
 
 const prefix = "@minecraft/";
 
@@ -21,7 +22,7 @@ PRE_LOAD.subscribe(async ()=>{
 async function GetMainVersions(existJson: string) {
     const data = await SafeDownloadContent(existJson);
     if(data.error) console.error(data.error);
-    const raw = JSON.parse(data.data?.toString("utf8")!);
+    const raw = JSON.parse(data.data?.toString("utf8")!) as any;
     const versions: any = {};
     const tags: any = {};
     const all: any = {};

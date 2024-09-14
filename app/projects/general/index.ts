@@ -1,5 +1,6 @@
 import { client } from "../../discord";
 import { CONTENT_LOADERS } from "../project-loader";
+import * as JSON from "comment-json";
 
 let data: {[k: string]: GuildInfo} = {};
 async function Loader(obj: any, path: string[], index: string){
