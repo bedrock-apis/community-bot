@@ -1,8 +1,8 @@
-import { Message } from "discord.js";
+import { Message, MessageType } from "discord.js";
 import { client } from "../../discord";
 import { CANCEL_EMOJI_IDENTIFIER, CANCEL_REACTION_TIMEOUT, DEBUG, GUILD_IDS, searchFor } from "../../features";
 import { Context } from "../project-loader";
-import { GetInfo } from "../general";
+import { GetGuildInfos } from "../general";
 import { FAQ_MANAGER } from "./manager";
 
 
@@ -21,13 +21,12 @@ client.on("messageReactionAdd", async (e, s)=>{
     }
 });
 client.on("messageCreate",async (e)=>{
-    const data = GetInfo()[e.guildId??"null"];
+    const data = GetGuildInfos()[e.guildId??"null"];
     if(!(GUILD_IDS.includes(e.guildId??"") && DEBUG) && (!data || !(data.faqChannels[e.channelId]??data.allowFAQ))) return;
     if(e.member?.user.id === e.client.user.id) return;
     const content = e.content;
     if(content.match(/^([ ]+|)\?\?+/g)) {
         const text = content.replaceAll(/^([ ]+|)\?\?+([ ]+|)/g,"").toLowerCase().replaceAll(/[ \-_\*\/\\\,\;]+/g,"-");
-
         const entry = searchFor(
             text,
             [...FAQ_MANAGER.searchKeys.keys()]
