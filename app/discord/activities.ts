@@ -32,7 +32,7 @@ export default [
        ]
     },
     {
-       "status": "invisible",
+       "status": "dnd",
        "activities": [
           {
              "name": "Hang Tight",
@@ -72,7 +72,7 @@ export default [
        ]
     },
     {
-       "status": "invisible",
+       "status": "online",
        "activities": [
           {
              "name": "Get Ready",
