@@ -5,3 +5,4 @@ bin_of_bun/
 dev.ps1
 bds-trash/
 dist/
+cache.json

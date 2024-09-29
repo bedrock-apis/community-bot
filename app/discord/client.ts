@@ -1,7 +1,9 @@
 import { ActivityType, BaseApplicationCommandData, ButtonInteraction, Client as CL, CacheType, ChatInputApplicationCommandData, ChatInputCommandInteraction, CommandInteraction, CommandInteractionOptionResolver, ContextMenuCommandBuilder, ContextMenuCommandInteraction, Embed, EmbedBuilder, GatewayIntentBits, Interaction, MessageApplicationCommandData, MessageCreateOptions, MessagePayload, SlashCommandBuilder, SlashCommandSubcommandBuilder, ToAPIApplicationCommandOptions} from "discord.js";
 import { EMBED_BACKGROUND, MAIN_CHANNEL_ID, MAIN_GUILD, PublicEvent, TriggerEvent } from "../features";
 import activities from "./activities";
+import { FileCache } from "./cache";
 export class Client extends CL<true>{
+    public readonly cache = new FileCache("./cache.json");
     isReloading?: Promise<void>;
     get readyState(){ return this.isReloading == null && this.isReady();}
     readonly _commandDefinitions = new Map<string,BaseApplicationCommandData>();
