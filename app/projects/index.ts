@@ -10,6 +10,7 @@ import "./FAQ";
 import "./transform";
 import "./NBT";
 import "./forum";
+import "./announcements";
 //////////////////////// Developed -> please comment these one before pushing changes
 import "./api-types";
 //import "./ts-compiler";

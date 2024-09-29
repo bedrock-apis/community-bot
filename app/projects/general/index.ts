@@ -18,11 +18,17 @@ export class GuildInfo{
     public faqChannels: {[k: string]: boolean};
     public faqManagers: {[k: string]: boolean};
     public sendWelcomeSquadRole?: string;
+    public editorUpdates: string;
+    public editorUpdatesRole: string;
+    public isOwner: boolean;
     constructor(data: any){
+        this.isOwner = data["permission"] === "owner";
         this.allowFAQ = data["allow-faq"]??false;
         this.faqChannels = data["faq-channels"]??{};
         this.faqManagers = {};
         this.sendWelcomeSquadRole = data["welcome-squad"]??"";
+        this.editorUpdates = data["editor-updates"]??"";
+        this.editorUpdatesRole = data["editor-updates-role"]??"";
         if(Array.isArray(data["faq-management"])) for(const k of data["faq-management"]) 
             if(typeof k === "string") this.faqManagers[k] = true;
             else console.warn("[GENERAL-INFO]","Invalid faqManager value: " + k);
