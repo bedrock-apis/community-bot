@@ -76,7 +76,9 @@ export function calculateSimilarity(text: string, text2: string){
             }
         }
     }
-    return matrix[w2l][w1l];
+    let score = matrix[w2l][w1l] / Math.max(Math.min(w1l, w2l), 1);
+    if(text2.includes(text)) score -= 0.3 / Math.max((text.length - text2.length), 1);
+    return score;
 }
 export function searchFor(text: string, possibleResults: string[]){
     let results = [];
@@ -85,7 +87,7 @@ export function searchFor(text: string, possibleResults: string[]){
         results.push({
             score,
             result
-        })
+        });
     }
     return results.sort((a, b)=> a.score - b.score);
 }
