@@ -20,8 +20,8 @@ setInterval(()=>{
 }, 15*60*1000); //15min
 
 AFTER_LOAD.subscribe(()=>{
-  //if(!channel) return;
-  Run("1139562043867934750" /*channel*/);
+  if(!channel) return;
+  Run(channel);
 });
 
 
