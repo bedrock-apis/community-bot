@@ -117,7 +117,7 @@ async function Post(page: any, channel: string){
 
     const videos = [...body.matchAll(/(?<!\()https:\/\/github\.com\/user-attachments\/assets\/[a-f0-9\-]{36}(?!\))/g)??[]];
 
-    if (videos.length) await fetch("https://discord.com/api/v10/channels/" + channel + "/messages", {
+    if (videos.length) fetch("https://discord.com/api/v10/channels/" + channel + "/messages", {
       method: "POST", 
       headers: new Headers({
           Authorization:"Bot " + client.token,
@@ -129,7 +129,22 @@ async function Post(page: any, channel: string){
               "attachments": []
             }
           )
+    }).then(async e=>{
+      if(e.ok){
+        const em = await e.json() as any;
+        return fetch(
+          `https://discord.com/api/v10/channels/${channel}/messages/${em.id}/crosspost`,
+          {
+            method: "POST", 
+            headers:new Headers({
+                Authorization:"Bot " + client.token,
+                "Content-Type":"application/json"
+            }),
+          }
+        ).then(e=>e.json());
+      }
     });
+
     const message = await response.json() as any;
     if(message) {
         await fetch(
