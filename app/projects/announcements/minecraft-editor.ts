@@ -19,6 +19,12 @@ setInterval(()=>{
     Run(channel);
 }, 15*60*1000); //15min
 
+AFTER_LOAD.subscribe(()=>{
+  //if(!channel) return;
+  Run("1139562043867934750" /*channel*/);
+});
+
+
 async function Run(channel: string) {
     let data = await fetch("https://api.github.com/repos/Mojang/minecraft-editor/discussions?page=99999");
     const links = data.headers.get("link")!.split(",").filter(e=>e.includes("last"));
@@ -34,19 +40,37 @@ async function Run(channel: string) {
     const date = new Date(created_at).getTime();
     const lastTime = client.cache.get("editor_last_post_time")??0;
     if(date <= lastTime) return;
+    await Post(page, channel);
     client.cache.set("editor_last_post_time", date);
-    Post(page, channel);
 }
 async function Post(page: any, channel: string){
-    const {title,  body, created_at, html_url, user: {login, avatar_url,html_url:userUrl}} = page;
-    const [first, ...images] = [...body.matchAll(/\<img ([^\<\>])+ src="([^"]+)"\>/g)].map(e=>{
+    const {title, body, created_at, html_url, user: {login, avatar_url,html_url:userUrl}} = page;
+    const images = [...body.matchAll(/\<img ([^\<\>])+ src="([^"]+)"\>/g)].map(e=>{
         return e[2];
     });
+    [...body.matchAll(/!\[.*?\]\((https:\/\/github\.com\/user-attachments\/assets\/[a-f0-9-]+)\)/g)].forEach(e=>{
+      images.push(e[1]);
+    });
+    const maxBodySize = 4096 - 10;
+    const buildedBody = body.replaceAll("---","").replaceAll(/((?<!\()https:\/\/github\.com\/user-attachments\/assets\/[a-f0-9\-]{36}(?!\))|(!\[.*?\]\(https:\/\/github\.com\/user-attachments\/assets\/[a-f0-9-]+\)))/g,"").replaceAll(/\<img ([^\<\>])+\>/g,"").replaceAll("  "," ").replaceAll(/^\s*/mg,"").replaceAll("##","###").replaceAll(/(\r|\n|\r\n)/g,"\n")
+    const parts = buildedBody.split("\n");
+    let result = "";
+    let currentSize = 0;
+    let index = 0;
+    for(const part of parts){
+      currentSize += part.length + 1;
+      index++;
+      if(currentSize >= maxBodySize) index--;
+    }
+    
+    result = parts.slice(0, index).join("\n");
+    result += "\n. . .";
+
     const main = 
     {
       "timestamp": created_at,
       "title": "**" + title + "**",
-      "description": body.replaceAll("---","").replaceAll(/\<img ([^\<\>])+\>/g,"").replaceAll("  "," ").replaceAll(/^\s*/mg,"").replaceAll("##","###"),
+      "description": result,
       "url": html_url,
       "color": null,
       "author": {
@@ -56,12 +80,12 @@ async function Post(page: any, channel: string){
       }
     } as any;
     const embeds = [main];
-    if(first){
+    if(images[0]){
         main.image = {
-          "url": first
+          "url": images[0]
         }
     }
-    for (const element of images) {
+    for (const element of images.slice(1)) {
         embeds.push(
             {
               "url": html_url,
@@ -79,11 +103,32 @@ async function Post(page: any, channel: string){
         }),
         body: JSON.stringify(
             {
-                "content": updatesRole?`# <@&${updatesRole}>`:null,
+                "content": (updatesRole?`# <@&${updatesRole}>`:""),
                 "embeds": embeds,
                 "attachments": []
               }
             )
+    });
+
+    if(!response.ok) {
+      console.log(await response.json());
+      throw new Error("Faild to send editor apis, update: ");
+    }
+
+    const videos = [...body.matchAll(/(?<!\()https:\/\/github\.com\/user-attachments\/assets\/[a-f0-9\-]{36}(?!\))/g)??[]];
+
+    if (videos.length) await fetch("https://discord.com/api/v10/channels/" + channel + "/messages", {
+      method: "POST", 
+      headers: new Headers({
+          Authorization:"Bot " + client.token,
+          "Content-Type":"application/json"
+      }),
+      body: JSON.stringify(
+          {
+              "content": ["## Related Videos",...videos.map(e=>" - " + e)].join("\n"),
+              "attachments": []
+            }
+          )
     });
     const message = await response.json() as any;
     if(message) {

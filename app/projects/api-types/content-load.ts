@@ -6,8 +6,12 @@ import * as JSON from "comment-json";
 const prefix = "@minecraft/";
 
 PRE_LOAD.subscribe(async ()=>{
-    const [all, pV, pT, obj] = await GetMainVersions(BDS_DOCS_REPO + "/preview/exist.json");
-    const [all2, sV, sT] = await GetMainVersions(BDS_DOCS_REPO + "/stable/exist.json");
+    const [all, pV, pT, obj] = await GetMainVersions(BDS_DOCS_REPO + "/preview/exist.json")??[];
+    const [all2, sV, sT] = await GetMainVersions(BDS_DOCS_REPO + "/stable/exist.json")??[];
+    if(!all){    
+        console.error("Faild to load module types from script_modules");
+        return;
+    }
     for(const name of Object.keys(all)){
         const n = all[name].name;
         RESOURCES.VARIABLES["module." + n + ".name"] = all[name].fullName;
@@ -23,10 +27,22 @@ async function GetMainVersions(existJson: string) {
     const data = await SafeDownloadContent(existJson);
     if(data.error) console.error(data.error);
     const raw = JSON.parse(data.data?.toString("utf8")!) as any;
+    let mappings;
+    if(raw.flags.includes("SCRIPT_MODULES_MAPPING")){
+        const {script_module_files, script_modules_mapping} = raw.SCRIPT_MODULES_MAPPING;
+        mappings = {
+            script_modules_mapping,
+            script_modules: script_module_files
+        };
+    }
+    else if(raw.flags.includes("module_mapping")) {
+        mappings = raw;
+    }
+    else return null;
     const versions: any = {};
     const tags: any = {};
     const all: any = {};
-    for(const path of raw.script_modules){
+    for(const path of mappings.script_modules){
         if(path.startsWith(prefix) && !path.includes("internal")) {
             const p = new PackageVersion(path);
             if(p.tag) {
@@ -39,7 +55,7 @@ async function GetMainVersions(existJson: string) {
             all[p.name] = versions[p.name] = c??p;
         }
     }
-    return [all, versions, tags, raw.script_modules_mapping];
+    return [all, versions, tags, mappings.script_modules_mapping];
 }
 class PackageVersion{
     readonly path: string;
