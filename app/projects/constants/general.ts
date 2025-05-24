@@ -1,1 +1,0 @@
-export const BDS_DOCS_REPO = "https://raw.githubusercontent.com/bedrock-apis/bds-docs";

@@ -1,3 +1,21 @@
+# USED ENVIRONMENT
+ - "LOGS_ENABLED": boolean, use to disable/enable file logging (optional)
+ - "LOGS_FOLDER": string, path to save logs (optional)
+ - "DISCORD_BOT_TOKEN": string, token for discord bot (* required)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Setup your development
  - Add your discord bot token to `.\dev.ps1` file
    ```powershell
