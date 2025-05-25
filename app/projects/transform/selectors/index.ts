@@ -1,4 +1,5 @@
 //@ts-nocheck
+import { APIEmbed } from "discord.js";
 import type { DefaultSubCommandExport } from "..";
 import { COLORS } from "../../../features";
 
@@ -6,56 +7,8 @@ const NAME = "selector";
 const SELECTOR_REGEX = /@(?:[spear]|initiator)/
 const SELECTOR_KEY_REGEX = /(?:\s+|)[\[\{,](?:\s+|)(c|d[xyz]|family|has(?:_property|item|permission)|l|lm|m|name|scores|t(?:ag|ype)|r(?:x|y|)(?:|m)|x|y|z)(?:\s+|)=(?:\s+|)/;
 
-const filters = Symbol("filters");
-export default {
-    name: NAME,
-    builder: (e)=>e.setName(NAME).setDescription("Converts selector to EntityQuery Object").addStringOption(e=>e.setName("target-selector").setDescription("Selector expression")),
-    handler: async (c, n, i)=>{
-        const source = i.options.getString("target-selector");
-        if(!source?.startsWith("@") || !source.endsWith("]")) {
-            await i.reply({
-                embeds:[
-                    {
-                        title: "FORMAT ERROR",
-                        color: COLORS.EMBED_ERROR,
-                        description: `Selector target argument have to start's with '@' and end's with ']'.\n\`\`\`properties\n${source}\n\`\`\``,
-                        timestamp: new Date().toISOString(),
-                        footer:{text:"by M9", icon_url: "https://avatars.githubusercontent.com/u/109746665?v=4"}
-                    }
-                ]
-            })
-            return;
-        }
-        const querys = {};
-        let q;
-
-        for (let v of source.slice(0,source.length - 1).split(SELECTOR_REGEX)) {
-            const texts = v.trim().split(SELECTOR_KEY_REGEX).splice(1);
-            const query = querys[texts] = {};
-            for (let i = 0; i < texts.length; i += 2) {
-                // console.warn(i, texts[i]);
-                Query[texts[i]]?.(texts[i + 1].trim(), query);
-                // console.warn(query);
-            }
-            q = query;
-        }
-        await i.reply({
-            embeds:[
-                {
-                    title: "Results",
-                    color: COLORS.EMBED_DEFAULT,
-                    description: `Selector target expresion\n\`\`\`properties\n${source}\n\`\`\`\n\`\`\`js\nconst eQuery = ${JSON.stringify(q, null, 3)}\n\`\`\`\n`,
-                    timestamp: new Date().toISOString(),
-                    footer:{text:"by M9", icon_url: "https://cdn.discordapp.com/avatars/558197847108091914/bab24265e8b9d9fef356f85a7550961b.webp"}
-                }
-            ]
-        })
-    }
-} as DefaultSubCommandExport;
-
-
-
 class Query {
+    static #filterKey = Symbol("filters");
     static c(value, query) {
         if (!value.startsWith("!")) query.closest = +value;
         else query.farthest = +value.substring(1);
@@ -106,7 +59,7 @@ class Query {
     }
     static hasitem(value, query, source) {
         // console.warn(value);
-        const filters = query.filters ??= [];
+        const filters = query[Query.#filterKey];
         let item, data, location, slot;
         filters.push()
         return query
@@ -177,7 +130,7 @@ class Query {
     static type(value, query) {
         if (value.startsWith("!")) {
             (query.excludeTypes ??= []).push(value.split(/"|!/).reduce((a, t) => a || t.trim() || a, ""))
-        } else (query.types ??= []).push(value.split('"').reduce((a, t) => a || t.trim() || a, ""));
+        } else query.type = (value.split('"').reduce((a, t) => a || t.trim() || a, ""));
         return query;
     }
     static r(value, query) {
@@ -231,9 +184,51 @@ class Query {
 
     constructor(selector, source = {}) {
         const pairs = selector.trim().split(SELECTOR_KEY_REGEX).splice(1);
-        for (let i = 0; i < pairs.length; i += 2) {
+        this[Query.#filterKey] = [];
+        for (let i = 0, l = pairs.length; i < l; i += 2) {
             Query[pairs[i]]?.(pairs[i + 1].trim(), this, source);
         }
     }
-    [filters] = []
 }
+
+export default {
+    name: NAME,
+    builder: (e) => e.setName(NAME).setDescription("Converts selector to EntityQuery Object").addStringOption(e => e.setName("@").setDescription("Selector expression")),
+    handler: async (c, n, i) => {
+        const source = i.options.getString("@");
+        const input: APIEmbed = {
+            timestamp: new Date().toISOString(),
+            footer: { text: "by Remember M9", icon_url: "https://cdn.discordapp.com/avatars/558197847108091914/189cb08ef5d8b4c9dfb76f8ec5dcf5f4.png" }
+        };
+
+        if (!source?.startsWith("@") || !source.endsWith("]")) {
+
+            Object.assign(input, {
+                title: "FORMAT ERROR",
+                color: COLORS.EMBED_ERROR,
+                description: `Selector target argument have to start's with '@' and end's with ']'.\n\`\`\`properties\n${source}\n\`\`\``
+            })
+
+        }
+        else {
+
+            const querys = {};
+            let query;
+
+            for (let v of source.slice(0, source.length - 1).split(SELECTOR_REGEX)) {
+                const texts = v.trim().split(SELECTOR_KEY_REGEX).splice(1);
+                query = querys[texts] = {};
+                for (let i = 0; i < texts.length; i += 2) {
+                    Query[texts[i]]?.(texts[i + 1].trim(), query);
+                }
+            }
+
+            Object.assign(input, {
+                title: "Results",
+                color: COLORS.EMBED_DEFAULT,
+                description: `Selector target expresion\n\`\`\`properties\n${source}\n\`\`\`\n\`\`\`js\nconst eQuery = ${JSON.stringify(query, null, 3)}\n\`\`\`\n`
+            })
+        }
+        await i.reply({ embeds: [input] })
+    }
+} as DefaultSubCommandExport;
