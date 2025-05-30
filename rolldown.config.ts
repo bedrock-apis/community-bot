@@ -2,7 +2,7 @@ import {defineConfig} from "rolldown";
 
 export default defineConfig([
     {
-        input: "app/index.ts",
+        input: "app/main.ts",
         external: [
             /node:/
         ],
@@ -10,20 +10,7 @@ export default defineConfig([
         output: {
             file: "dist/main.js",
             minify: true,
-            comments: "none"
         },
         treeshake: true
-    },
-    {
-        input: "test.ts",
-        external: [
-            /node:/
-        ],
-        platform:"node",
-        output: {
-            file: "dist/test.js",
-            minify: true,
-        },
-        treeshake: true,
     }
 ]);
