@@ -1,5 +1,4 @@
-import { Bot } from "discord-dependless";
+import { run } from "../app/main";
 import { token } from "./test.data.json" with {type:"json"};
 
-export const bot = new Bot({token});
-export {token};
+await run(token);

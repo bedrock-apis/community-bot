@@ -12,5 +12,17 @@ export default defineConfig([
             minify: true,
         },
         treeshake: true
+    },
+    {
+        input: "tests/base.ts",
+        external: [
+            /node:/
+        ],
+        platform:"node",
+        output: {
+            file: "dist/test.js",
+            minify: true,
+        },
+        treeshake: true
     }
 ]);

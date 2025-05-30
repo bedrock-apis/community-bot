@@ -8,9 +8,9 @@ export class BedrockAPIsBot extends Bot {
     public constructor(token: string) {
         super({ token });
     }
-    public async login(): Promise<void> {
+    public async login(intentBits: number): Promise<void> {
         // IntentBits required for specific permission and events to get fired
-        const gateway = await this.connect(0);
+        const gateway = await this.connect(intentBits);
         gateway.addEventListener("READY", _ => {
             this.applicationId = _.data.application.id;
             this.onReady.trigger(new BotReadyEventData(this, this.applicationId, _.data.guilds.map(e=>e.id)));
