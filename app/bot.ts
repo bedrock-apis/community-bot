@@ -16,6 +16,7 @@ export class BedrockAPIsBot extends Bot {
             this.onReady.trigger(new BotReadyEventData(this, this.applicationId, _.data.guilds.map(e=>e.id)));
         });
         gateway.addEventListener("MESSAGE_CREATE", _ => this.onMessageSend.trigger(new MessageCreateEventData(this, _.data)));
+        gateway.addEventListener("error", console.error)
     }
     public async setCommands(commands: DiscordApplicationCommandUpdateRequest[]): Promise<void> {
         if (!this.applicationId)

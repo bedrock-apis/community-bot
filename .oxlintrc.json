@@ -110,6 +110,6 @@
     "no-unsafe-optional-chaining": "warn"
   },
   "ignorePatterns": [
-    "*.test.ts"
+    "tests/**/*"
   ]
 }
