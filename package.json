@@ -18,13 +18,15 @@
     "url": "https://github.com/Bedrock-APIs/Bedrock-APIs-Bot/issues"
   },
   "homepage": "https://github.com/Bedrock-APIs/Bedrock-APIs-Bot#readme",
-  "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b",
+  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
   "devDependencies": {
     "@types/deno": "^2.3.0",
     "oxlint": "^0.16.11",
-    "rolldown": "1.0.0-beta.9"
+    "rolldown": "1.0.0-beta.14-commit.12b8061",
+    "rolldown-plugin-dts": "^0.13.13"
   },
   "dependencies": {
-    "discord-dependless": "10.0.0-alpha.5"
+    "discord-dependless": "10.0.0-alpha.6",
+    "fast-xml-parser": "^5.2.5"
   }
 }

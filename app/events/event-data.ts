@@ -5,7 +5,7 @@ export class EventData {}
 export class BotEventData extends EventData {
     public constructor(
         public readonly bot: BedrockAPIsBot
-    ){super()}
+    ){super();}
 }
 export class BotReadyEventData extends BotEventData {
     public constructor(bot: BedrockAPIsBot, 
