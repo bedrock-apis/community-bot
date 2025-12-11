@@ -1,20 +1,21 @@
-import {dts} from "rolldown-plugin-dts";
-import {defineConfig} from "rolldown";
+import { dts } from "rolldown-plugin-dts";
+import { defineConfig } from "rolldown";
 
 export default defineConfig([
     {
         input: {
-            "main":"app/main.ts"
+            "main": "app/main.ts"
         },
         plugins: [dts({
-            isolatedDeclarations: true,
+            oxc: true,
         })],
         external: /^(node:|@|discord-dependless)/,
         output: {
-            dir: "dist"
+            dir: "dist",
+            keepNames: true,
+            cleanDir: true
         },
-        treeshake: true,
-        keepNames: true
+        treeshake: true
     },
     {
         input: "tests/base.ts",

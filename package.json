@@ -5,8 +5,8 @@
   "main": "dist/main.js",
   "type": "module",
   "scripts": {
-    "dev": "powershell -ExecutionPolicy ByPass -File \".\\dev.ps1\"",
-    "build-run": "npx tsc & node ."
+    "test": "pnpm run build & node ./tests/dist/test.js",
+    "build": "tsgo --noEmit & rolldown -c"
   },
   "repository": {
     "type": "git",
@@ -21,12 +21,13 @@
   "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
   "devDependencies": {
     "@types/deno": "^2.3.0",
-    "oxlint": "^0.16.11",
-    "rolldown": "1.0.0-beta.14-commit.12b8061",
-    "rolldown-plugin-dts": "^0.13.13"
+    "@typescript/native-preview": "7.0.0-dev.20250709.1",
+    "oxlint": "^1.31.0",
+    "rolldown": "1.0.0-beta.53",
+    "rolldown-plugin-dts": "^0.18.3"
   },
   "dependencies": {
-    "discord-dependless": "10.0.0-alpha.6",
+    "discord-dependless": "10.0.0-alpha.8",
     "fast-xml-parser": "^5.2.5"
   }
 }

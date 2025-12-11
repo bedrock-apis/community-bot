@@ -1,4 +1,7 @@
 import { run } from "../app/main";
-import { token } from "./test.data.json" with {type:"json"};
+
+
+// create this json file where is your bot token saved
+import { token } from "./test.data.json" with {type: "json"};
 
 await run(token);
